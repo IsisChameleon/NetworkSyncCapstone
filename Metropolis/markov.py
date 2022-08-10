@@ -11,6 +11,31 @@ import networkx as nx
 from measuresFunctions import getMeasures
 import numpy as np
 
+def TReconnectIncomingEdgeToOtherNode(g_orig, inPlace=True):
+    
+    "MCMC transformation that preserves number of edges and nodes, and outgoing degree distribution, but not incoming degree distribution"
+    "Applicable for directed networks"
+    
+    if inPlace == False:
+        g=copy.deepcopy(g_orig)
+    else:
+        g=g_orig
+
+    '''Swap edges'''
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+
+    #Select a random node with at least outgoing degree = 1
+    node = list(g.nodes())[np.random.randint(0,N)]
+    
+    edge = list(g.edges())[np.random.randint(0,L)]
+    nodes_with_no_links = [ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) not in g.edges() and i != j]
+    node_pair = random.choice(nodes_with_no_links)
+
+    g.add_edge(node_pair[0], node_pair[1])
+    g.remove_edge(edge[0], edge[1])
+    return(g)
+
 def TDeleteEdgeAddEdge(g_orig, inPlace=True):
     
     "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
