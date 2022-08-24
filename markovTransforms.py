@@ -11,32 +11,83 @@ import networkx as nx
 from measuresFunctions import getMeasures
 import numpy as np
 
+def rebalance_incoming_edges_for_node(G, node: int):
+    '''G directed graph
+       node node to rebalance incoming weight so that incoming weight '''
+    pass
+
 def TReconnectIncomingEdgeToOtherNode(g_orig, inPlace=True):
     
     "MCMC transformation that preserves number of edges and nodes, and outgoing degree distribution, but not incoming degree distribution"
     "Applicable for directed networks"
+    "This transfromation also preserve the sum of outgoing weights from a node, but not incoming ==> does NOT preserver (1,1,1,1..) eigenvector"
     
     if inPlace == False:
         g=copy.deepcopy(g_orig)
     else:
         g=g_orig
 
-    '''Swap edges'''
+    '''Reconnect incoming edge'''
     N=g.number_of_nodes()
     L=g.number_of_edges()
 
-    #Select a random node with at least outgoing degree = 1
-    node = list(g.nodes())[np.random.randint(0,N)]
-    
-    edge = list(g.edges())[np.random.randint(0,L)]
-    nodes_with_no_links = [ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) not in g.edges() and i != j]
-    node_pair = random.choice(nodes_with_no_links)
+    #Select a random edge to reconnect
+    edge_to_reconnect = random.choice(list(g.edges(data=True)))
+    print(f'edge to reconnect:{edge_to_reconnect}')
 
-    g.add_edge(node_pair[0], node_pair[1])
-    g.remove_edge(edge[0], edge[1])
+    #Select another random node to connect that edge to
+    node2 = [node for node in g.nodes() if node != edge_to_reconnect[1]][np.random.randint(0,N-1)]
+    print(f'dest node selected {node2}')
+    
+    new_weight = edge_to_reconnect[2]['weight']
+    if (edge_to_reconnect[0], node2) in g.edges:
+        new_weight += g.get_edge_data(edge_to_reconnect[0], node2)['weight']
+    g.add_weighted_edges_from([(edge_to_reconnect[0], node2, new_weight)])
+    print(f'new edge: {(edge_to_reconnect[0], node2, new_weight)}')
+    g.remove_edge(edge_to_reconnect[0], edge_to_reconnect[1])
+    print(f"removed edge: {edge_to_reconnect}, {edge_to_reconnect[2]['weight']}")
+
+    #nodes to rebalance : node2 (added incoming edge), edge_to_reconnect[1] (removed incoming edge)
+    # is the rebalance a symmetric operation
+    rebalance_incoming_edges_for_node(g, node2)
+    rebalance_incoming_edges_for_node(g, edge_to_reconnect[1])
+    return(g)
+
+def TReconnectOutgoingEdgeToOtherNode(g_orig, inPlace=True):
+    
+    "MCMC transformation that preserves number of edges and nodes, and NOT outgoing degree distribution, but incoming degree distribution"
+    "Applicable for directed networks"
+    "This transfromation also preserve the sum of incoming weights from a node, therefore will preserve eigenvector (1,1,1,...1) if there is one"
+    
+    if inPlace == False:
+        g=copy.deepcopy(g_orig)
+    else:
+        g=g_orig
+
+    '''Reconnect incoming edge'''
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+
+    #Select a random edge to reconnect
+    edge_to_reconnect = random.choice(list(g.edges(data=True)))
+    print(f'edge to reconnect:{edge_to_reconnect}')
+
+    #Select another random node to serve as the origin of that edge
+    node2 = [node for node in g.nodes() if node != edge_to_reconnect[0]][np.random.randint(0,N-1)]
+    print(f'origin node selected {node2}')
+    
+    new_weight = edge_to_reconnect[2]['weight']
+    if (node2, edge_to_reconnect[1]) in g.edges:
+        new_weight += g.get_edge_data(node2, edge_to_reconnect[1])['weight']
+    g.add_weighted_edges_from([(node2, edge_to_reconnect[1], new_weight)])
+    print(f'new edge: {(node2, edge_to_reconnect[1], new_weight )}')
+    g.remove_edge(edge_to_reconnect[0], edge_to_reconnect[1])
+    print(f"removed edge: {edge_to_reconnect}, {edge_to_reconnect[2]['weight']}")
+
     return(g)
 
 def TDeleteEdgeAddEdge(g_orig, inPlace=True):
+        ''' Designed for undirected graph - will need to review for directed graph '''
     
     "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
     
@@ -57,6 +108,7 @@ def TDeleteEdgeAddEdge(g_orig, inPlace=True):
     return(g)
 
 def TSwapEdges(g_orig, inPlace=True):
+    ''' Designed for undirected graph - will need to review for directed graph '''
     
     if inPlace == False:
         g=copy.deepcopy(g_orig)

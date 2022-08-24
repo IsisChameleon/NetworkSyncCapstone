@@ -2,3 +2,9 @@ Metropolis/__pycache__/markov.cpython-39.pyc
 Metropolis/__pycache__/measuresFunctions.cpython-39.pyc
 Metropolis/__pycache__/metropolisHastings.cpython-39.pyc
 Metropolis/__pycache__/pickleUtil.cpython-39.pyc
+__pycache__/markov.cpython-39.pyc
+__pycache__/measuresFunctions.cpython-39.pyc
+__pycache__/metropolisHastings.cpython-39.pyc
+__pycache__/markovTransforms.cpython-39.pyc
+__pycache__/networkSigma.cpython-39.pyc
+__pycache__/pickleUtil.cpython-39.pyc
