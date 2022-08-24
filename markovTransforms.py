@@ -11,12 +11,13 @@ import networkx as nx
 from measuresFunctions import getMeasures
 import numpy as np
 
+
 def rebalance_incoming_edges_for_node(G, node: int):
     '''G directed graph
        node node to rebalance incoming weight so that incoming weight '''
     pass
 
-def TReconnectIncomingEdgeToOtherNode(g_orig, inPlace=True):
+def TReconnectDestinationOfEdgeToOtherNode(g_orig, inPlace=True):
     
     "MCMC transformation that preserves number of edges and nodes, and outgoing degree distribution, but not incoming degree distribution"
     "Applicable for directed networks"
@@ -53,12 +54,20 @@ def TReconnectIncomingEdgeToOtherNode(g_orig, inPlace=True):
     rebalance_incoming_edges_for_node(g, edge_to_reconnect[1])
     return(g)
 
-def TReconnectOutgoingEdgeToOtherNode(g_orig, inPlace=True):
-    
-    "MCMC transformation that preserves number of edges and nodes, and NOT outgoing degree distribution, but incoming degree distribution"
-    "Applicable for directed networks"
-    "This transfromation also preserve the sum of incoming weights from a node, therefore will preserve eigenvector (1,1,1,...1) if there is one"
-    
+def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
+    """Transformation for Metropolis Hasting algorithm that keeps out-degree constant, but not in-degree
+        MCMC transformation that preserves number of edges and nodes, and incoming degree distribution but not outgoing degree distribution"
+        Applicable for directed networks"
+        This transfromation also preserve the sum of incoming weights from a node, therefore will preserve eigenvector (1,1,1,...1) if there is one"
+
+    Args:
+        g_orig (_type_): original networkx digraph to apply the transformation to
+        inPlace (bool, optional): apply the transformation to g_orig or to a deepcopy of it. Defaults to True.
+
+    Returns:
+        _type_: newtworkx diGraph
+    """
+
     if inPlace == False:
         g=copy.deepcopy(g_orig)
     else:
@@ -70,24 +79,21 @@ def TReconnectOutgoingEdgeToOtherNode(g_orig, inPlace=True):
 
     #Select a random edge to reconnect
     edge_to_reconnect = random.choice(list(g.edges(data=True)))
-    print(f'edge to reconnect:{edge_to_reconnect}')
 
-    #Select another random node to serve as the origin of that edge
-    node2 = [node for node in g.nodes() if node != edge_to_reconnect[0]][np.random.randint(0,N-1)]
-    print(f'origin node selected {node2}')
-    
+    #Select a random edge that does not exist - keep incoming edge to where it is
+    no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges()]
+    new_edge = random.choice(no_edges)
     new_weight = edge_to_reconnect[2]['weight']
-    if (node2, edge_to_reconnect[1]) in g.edges:
-        new_weight += g.get_edge_data(node2, edge_to_reconnect[1])['weight']
-    g.add_weighted_edges_from([(node2, edge_to_reconnect[1], new_weight)])
-    print(f'new edge: {(node2, edge_to_reconnect[1], new_weight )}')
-    g.remove_edge(edge_to_reconnect[0], edge_to_reconnect[1])
-    print(f"removed edge: {edge_to_reconnect}, {edge_to_reconnect[2]['weight']}")
 
-    return(g)
+    g.add_weighted_edges_from([(new_edge[0], new_edge[1], new_weight)])
+    #print(f'new edge: {(new_edge[0], new_edge[1], new_weight )}')
+    g.remove_edge(edge_to_reconnect[0], edge_to_reconnect[1])
+    #print(f"removed edge: {edge_to_reconnect}, {edge_to_reconnect[2]['weight']}")
+
+    return g
 
 def TDeleteEdgeAddEdge(g_orig, inPlace=True):
-        ''' Designed for undirected graph - will need to review for directed graph '''
+    ''' Designed for undirected graph - will need to review for directed graph '''
     
     "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
     
@@ -206,3 +212,5 @@ def markov_iter(g, T, tmax, thinning, measures=None, sampling=False, nb_samples=
         
         
     return { 'measures': measures, 'measures_t': measures_t, 'samples': samples, 'samples_t': samples_t }
+
+

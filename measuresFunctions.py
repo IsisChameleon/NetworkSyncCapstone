@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+
 ###########################################################################################################################################
 # https://networkx.org/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/connected.html#connected_component_subgraphs
 ###########################################################################################################################################
@@ -129,6 +130,52 @@ def getMeasures(g, measureList=False, measures=None):
         measures['N_K1'].append(number_of_nodes_in_largest_component)
         measures['multigraph'].append(multigraph)
         measures['N_C1'].append(N_largest_clique)
+        return measures
+
+from networkSigma import discreteSigma2Analytical
+def getMeasuresDirected(g, measureList=False, measures=None):
+    
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+    
+    sum_degree_nodes=np.sum([g.degree[i] for i in g.nodes])
+    average_degree = sum_degree_nodes/ N
+    
+    Ex2=(1/N)*(np.sum([g.degree[i]**2 for i in g.nodes]))
+    Ex=average_degree
+    sigma_z=np.sqrt(Ex2  - (Ex)**2)
+    degree_variability=sigma_z/average_degree
+      
+    #Cnet and nx.clustering doesn't work for multigraphs, so we need to make sure the graph is a simple one
+    weighted_average_clustering=sum(nx.clustering(g, weight='weight').values()) / N
+ 
+    sigma2 = discreteSigma2Analytical(g)
+        
+    if (measureList==False):
+        return { \
+            'N': N, \
+            'L': L, \
+            'average_degree': average_degree, \
+            'sigma_z': sigma_z, \
+            'weighted_average_clustering': weighted_average_clustering, \
+                'discreteSigma2Analytical': sigma2
+               }
+    if (measures==None):
+        return { \
+            'N': [N], \
+            'L': [L], \
+            'average_degree': [average_degree], \
+            'sigma_z': [sigma_z], \
+            'weighted_average_clustering': [weighted_average_clustering], \
+                 'discreteSigma2Analytical': [sigma2]
+               }
+    else:
+        measures['N'].append(N)
+        measures['L'].append(L)
+        measures['average_degree'].append(average_degree)
+        measures['sigma_z'].append(sigma_z)
+        measures['weighted_average_clustering'].append(weighted_average_clustering)
+        measures['discreteSigma2Analytical'].append(sigma2)
         return measures
     
 
