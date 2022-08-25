@@ -8,3 +8,6 @@ __pycache__/metropolisHastings.cpython-39.pyc
 __pycache__/markovTransforms.cpython-39.pyc
 __pycache__/networkSigma.cpython-39.pyc
 __pycache__/pickleUtil.cpython-39.pyc
+**/__pycache__/**
+__pycache__/**
+

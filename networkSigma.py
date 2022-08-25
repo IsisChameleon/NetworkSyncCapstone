@@ -200,6 +200,8 @@ class ProcessOnNetwork():
             return np.cov(X, bias=True)
 
         if (self.Xs.shape[0] < num_timesteps):
+            print(f'Your simulation has only been simulated for {self.Xs.shape[0]} timesteps, I cannot calculate measure over {num_timesteps} timesteps. \
+                Cut short to {self.Xs.shape[0]}')
             num_timesteps = self.Xs.shape[0]
 
         avgCov=0
