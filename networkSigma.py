@@ -118,19 +118,20 @@ def projectedCovarianceMatrixForDiscreteDynamicalProcesses(C, tolerance=10 , max
     mre = maxRelativeError(dProjM, projM)
 
     if np.isnan(mre) or np.isinf(mre):
-        print('ERROR power series calculation of projected covariance matrix failed to converge')
-        return
+        raise Exception(f"ERROR power series calculation of projected covariance matrix failed to converge")
 
     if i == max_iterations:
-        mac = np.mean(np.mean(np.abs(projM)))
-        print(f'WARNING power series did not converge within the maximum allowed iterations')
-        return
+        raise Exception(f'WARNING power series did not converge within the maximum allowed iterations')
 
     return projM
 
 def discreteSigma2Analytical(g):
-    projectedCovarianceMatrix = projectedCovarianceMatrixForDiscreteDynamicalProcesses
+    # Warning: Your network must be synchronizable in order to use this function. I didn't include a test for eigenvalues here because it
+    # would have added compute time, but your largest eigenvalue must be 1.
+    # It will throw an exception if the calculation of the projectedCovarianceMatrix fails to converge
+    
     C = nx.to_numpy_array(g)
+    projectedCovarianceMatrix = projectedCovarianceMatrixForDiscreteDynamicalProcesses
     return np.trace(projectedCovarianceMatrix(C))/C.shape[0]
 
     

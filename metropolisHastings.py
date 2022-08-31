@@ -34,7 +34,7 @@ def Acceptance(g, gnext, measure_fn, **parameters):
     return accept
    
 
-def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, measure_fn=nx.transitivity, sample_measure_fn=getMeasures, **parameters):
+def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, constraint_measure_fn=nx.transitivity, sample_measure_fn=getMeasures, **parameters):
     #g  : graph to sample
     #P  : function to calculate P(g) 
     #T  : transformation T from g to g'
@@ -66,7 +66,7 @@ def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, 
             gnext = T(g, inPlace=False)
             total_propositions+=1
 
-            Acc=Acceptance(g, gnext, measure_fn, **parameters)
+            Acc=Acceptance(g, gnext, constraint_measure_fn, **parameters)
             
             if Acc == 1:       
                 # when the next graph is more probable take it!
@@ -95,7 +95,7 @@ def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, 
         # save the last graph measures as sample
         samples=sample_measure_fn(g, measureList=True, measures=samples)
         samples_t=t
-        print(f"Sample taken at time {t} with {measure_fn.__name__} =  {samples[measure_fn.__name__][-1]:.04f} after {accepted_swaps} accepted swaps (target accepted swaps before sampling = {thinning}).")
+        print(f"Sample taken at time {t} with {constraint_measure_fn.__name__} =  {samples[constraint_measure_fn.__name__][-1]:.04f} after {accepted_swaps} accepted swaps (target accepted swaps before sampling = {thinning}).")
 
 
     print('# Rejected:', rejected)
@@ -106,7 +106,7 @@ def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, 
     # After doing all the iterations return
     return { 'samples': samples, 'samples_t': samples_t, 'lastnet': g, 'rejections': rejected/(accepted+rejected) }
 
-def iterMHBeta(number_of_samples, beta, relaxation_time, Gstart, T, measure_fn, picklename, sample_measure_fn=getMeasures, max_propositions=0, burnin=5000):
+def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_measure_fn, picklename, sample_measure_fn=getMeasures, max_propositions=0, burnin=5000):
     
 # Example parameters:
 #     number_of_iter=20
@@ -119,27 +119,27 @@ def iterMHBeta(number_of_samples, beta, relaxation_time, Gstart, T, measure_fn, 
     print('Number of accepted swaps between samples:', thinning)
     print('{} burning iterations at the start before taking any samples'.format(burnin))
 
-    result_beta=[None for i in range(len(beta))]
+    result_beta=[None for i in range(len(betas))]
 
     i=0
     G=copy.deepcopy(Gstart)
     
     # burnin iterations
     
-    b=beta[0]
+    b=betas[0]
     parameters={'beta':b}
-    result_burnin=MetropolisHasting(G, T, number_of_samples=1, thinning=5000, max_propositions=5000, measure_fn=measure_fn, sample_measure_fn=sample_measure_fn, **parameters)
+    result_burnin=MetropolisHasting(G, T, number_of_samples=1, thinning=5000, max_propositions=5000, constraint_measure_fn=constraint_measure_fn, sample_measure_fn=sample_measure_fn, **parameters)
     G=result_burnin['lastnet']
     pickleSave(result_burnin, picklename + '_burnin_'+str(b), '.' )
     
     # taking samples iterations (number_samples for each beta)
     bprev=0
-    for b in beta:
+    for b in betas:
         print('--------------------------------------------------------------')
         print('                    Beta = ', b)
         print('--------------------------------------------------------------')
         parameters={'beta':b}
-        result_beta[i]=MetropolisHasting(G, T, number_of_samples, thinning, max_propositions, measure_fn, sample_measure_fn=sample_measure_fn,**parameters)
+        result_beta[i]=MetropolisHasting(G, T, number_of_samples, thinning, max_propositions, constraint_measure_fn, sample_measure_fn=sample_measure_fn,**parameters)
         printMeasures(result_beta[i]['samples'])
         G=result_beta[i]['lastnet']
         

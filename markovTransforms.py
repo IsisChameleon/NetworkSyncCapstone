@@ -76,16 +76,25 @@ def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
     '''Reconnect incoming edge'''
     N=g.number_of_nodes()
     L=g.number_of_edges()
+    
+    # Determine if network edges are weighted
+    weighted=True
+    if (nx.get_edge_attributes(g, 'weight') == {}):
+        weighted=False
 
     #Select a random edge to reconnect
     edge_to_reconnect = random.choice(list(g.edges(data=True)))
 
-    #Select a random edge that does not exist - keep incoming edge to where it is
+    #Select a random edge that does not exist - keep edge to reconnect destination to where it is
     no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges()]
     new_edge = random.choice(no_edges)
-    new_weight = edge_to_reconnect[2]['weight']
-
-    g.add_weighted_edges_from([(new_edge[0], new_edge[1], new_weight)])
+    
+    if weighted:
+        new_weight = edge_to_reconnect[2]['weight']
+        g.add_weighted_edges_from([(new_edge[0], new_edge[1], new_weight)])
+    else:
+        g.add_edges_from([(new_edge[0], new_edge[1])])
+        
     #print(f'new edge: {(new_edge[0], new_edge[1], new_weight )}')
     g.remove_edge(edge_to_reconnect[0], edge_to_reconnect[1])
     #print(f"removed edge: {edge_to_reconnect}, {edge_to_reconnect[2]['weight']}")
