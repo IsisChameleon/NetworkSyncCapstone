@@ -158,7 +158,7 @@ def getMeasuresDirected(g, measureList=False, measures=None):
             'average_degree': average_degree, \
             'sigma_z': sigma_z, \
             'weighted_average_clustering': weighted_average_clustering, \
-                'discreteSigma2Analytical': sigma2
+            'discreteSigma2Analytical': sigma2
                }
     if (measures==None):
         return { \
@@ -167,7 +167,7 @@ def getMeasuresDirected(g, measureList=False, measures=None):
             'average_degree': [average_degree], \
             'sigma_z': [sigma_z], \
             'weighted_average_clustering': [weighted_average_clustering], \
-                 'discreteSigma2Analytical': [sigma2]
+            'discreteSigma2Analytical': [sigma2]
                }
     else:
         measures['N'].append(N)
@@ -185,7 +185,22 @@ def plotDegreeDistribution(g):
     plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
     return fig, ax
 
-
+def printSamplesMeasuresMeanAndStd(measures, sample_measure_fn=getMeasuresDirected):
+    if (sample_measure_fn.__name__=='getMeasuresDirected'):
+        if type(measures['N'])!=list:
+            print('Number of nodes N:              {}'.format(measures['N']))
+            print('Number of links L:              {}'.format(measures['L']))
+            print('Average node degree <z>:        {:.04f}'.format(measures['average_degree']))
+            print('Deviation of degree sigma_z:    {:.04f}'.format(measures['sigma_z']))
+            print('Weighted average clustering:    {:.04f}'.format(measures['weighted_average_clustering']))
+            print('Analytical sigma^2 discrete:    {:.04f}'.format(measures['discreteSigma2Analytical'])) 
+        else:
+            print('Number of nodes N:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['N']), np.std(measures['N']) ))
+            print('Number of links L:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['L']), np.std(measures['L'])))
+            print('Average node degree <z>:        {:.04f}  +/-  {:.04f}'.format(np.average(measures['average_degree']),np.std(measures['average_degree'])))
+            print('Deviation of degree sigma_z:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['sigma_z']), np.std(measures['sigma_z'])))
+            print('Weighted average clustering:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['weighted_average_clustering']), np.std(measures['weighted_average_clustering'])))
+            print('Analytical sigma^2 discrete:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['discreteSigma2Analytical']),np.std(measures['discreteSigma2Analytical'])))
 
 def printMeasures(measures):
     if type(measures['N'])!=list:

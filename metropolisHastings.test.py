@@ -57,6 +57,7 @@ class Test_Acceptance(unittest.TestCase):
         random.seed(30)
 
         g = nx.random_regular_graph(4, 20)
+        g = makeColumnStochastic(g)
         gnext = TReconnectOriginOfEdgeToOtherNode(g, inPlace=False)
         parameters = { 'beta': 10 }
         measure_fn = discreteSigma2Analytical
@@ -66,7 +67,7 @@ class Test_Acceptance(unittest.TestCase):
         print('accetpance p = ', p)
 
         self.assertTrue(p <= 1)
-        self.assertEqual(0.9971162196654398, p)
+        self.assertEqual(0.9308416520915694, p)
 
 class Test_MetropolisHasting(unittest.TestCase):
 
@@ -92,6 +93,7 @@ class Test_MetropolisHasting(unittest.TestCase):
         # Arrange
         np.random.seed(30)
         random.seed(30)
+        
         n=5
         Gstart = getDirectedColumnStochasticErdosRenyi(20, 0.5, return_graph = True)
         G = copy.deepcopy(Gstart)
@@ -106,10 +108,11 @@ class Test_MetropolisHasting(unittest.TestCase):
 
         self.assertTrue(True)
 
-    def test_1_IterMHBeta(self):
+    def test_1_IterMHBeta_random_regular(self):
         betas = [-100, 0, 1000]
 
-        Gstart = nx.random_regular_graph(4, 20)
+        n=20
+        Gstart = nx.random_regular_graph(4, n)
         Gstart = makeColumnStochastic(Gstart, with_random_weights_initialization=False)
         G = copy.deepcopy(Gstart)
         T = TReconnectOriginOfEdgeToOtherNode
@@ -122,7 +125,7 @@ class Test_MetropolisHasting(unittest.TestCase):
                     betas=betas,  
                     relaxation_time=thinning, 
                     constraint_measure_fn=discreteSigma2Analytical, 
-                    picklename='test_resultKRegular_4_20', 
+                    picklename=f'test_resultKRegular_4_{n}', 
                     sample_measure_fn=getMeasuresDirected,
                     max_propositions=2000)
 
@@ -132,8 +135,68 @@ class Test_MetropolisHasting(unittest.TestCase):
         print("Metropolis hastings in {:.04f} seconds".format(toc-tic))
         print("--------------------------------------------------------")
 
-        plotMetropolisHastingsResult(result, 'Sigma', betas)
+        plotMetropolisHastingsResult(result, measurename=discreteSigma2Analytical.__name__, betas=betas)
+        
+        np.save('test_1_IterMHBeta_random_regular_lastnet_C', nx.to_numpy_array(result[-1]['lastnet']))
+        # C = nx.to_numpy_array(result[-1]['lastnet'])
+        # expectedC = np.load('test_1_IterMHBeta_random_regular_lastnet_C.npy')
 
+        # self.assertTrue(np.array_equal(expectedC, C))
+        self.assertTrue(True)
+        
+    def test_2_IterMHBeta_GraphTooDense(self):
+        betas = [-100, 0, 1000]
+
+        n=10
+        Gstart = nx.random_regular_graph(4, n)
+        Gstart = makeColumnStochastic(Gstart, with_random_weights_initialization=False)
+        G = copy.deepcopy(Gstart)
+        T = TReconnectOriginOfEdgeToOtherNode
+        thinning=G.number_of_edges()/2
+
+        with self.assertRaises(Exception):
+            result=iterMHBeta(G, T, 
+                        number_of_samples=5, 
+                        betas=betas,  
+                        relaxation_time=thinning, 
+                        constraint_measure_fn=discreteSigma2Analytical, 
+                        picklename=f'test_resultRandomeER_0.1_{n}', 
+                        sample_measure_fn=getMeasuresDirected,
+                        max_propositions=2000)
+            
+    def test_3_IterMHBeta_random_regular(self):
+        betas = [-100, 1000]
+
+        n=20
+        Gstart = getDirectedColumnStochasticErdosRenyi(20, 0.1, return_graph = True)
+        G = copy.deepcopy(Gstart)
+        T = TReconnectOriginOfEdgeToOtherNode
+        thinning=G.number_of_edges()/2
+
+        tic = time.perf_counter()
+
+        result=iterMHBeta(G, T, 
+                    number_of_samples=3, 
+                    betas=betas,  
+                    relaxation_time=thinning, 
+                    constraint_measure_fn=discreteSigma2Analytical, 
+                    picklename=f'test_resultRandomER_0.1_{n}', 
+                    sample_measure_fn=getMeasuresDirected,
+                    max_propositions=200)
+
+        toc = time.perf_counter()
+        print()
+        print("--------------------------------------------------------")
+        print("Metropolis hastings in {:.04f} seconds".format(toc-tic))
+        print("--------------------------------------------------------")
+
+        plotMetropolisHastingsResult(result, measurename=discreteSigma2Analytical.__name__, betas=betas)
+        
+        C = nx.to_numpy_array(result[-1]['lastnet'])
+        expectedC = np.load('test_3_IterMHBeta_random_regular_lastnet_C.npy')
+        #np.save('test_3_IterMHBeta_random_regular_lastnet_C', nx.to_numpy_array(result[-1]['lastnet']))
+
+        self.assertTrue(np.array_equal(expectedC, C))
         self.assertTrue(True)
 
 

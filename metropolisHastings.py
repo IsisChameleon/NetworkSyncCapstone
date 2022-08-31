@@ -9,7 +9,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 
-from measuresFunctions import getMeasures, printMeasures, plotMeasures
+from measuresFunctions import getMeasures, printSamplesMeasuresMeanAndStd, printMeasures, plotMeasures
 from pickleUtil import pickleLoad, pickleSave
 
 def Acceptance(g, gnext, measure_fn, **parameters):
@@ -140,7 +140,7 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
         print('--------------------------------------------------------------')
         parameters={'beta':b}
         result_beta[i]=MetropolisHasting(G, T, number_of_samples, thinning, max_propositions, constraint_measure_fn, sample_measure_fn=sample_measure_fn,**parameters)
-        printMeasures(result_beta[i]['samples'])
+        printSamplesMeasuresMeanAndStd(result_beta[i]['samples'], sample_measure_fn=sample_measure_fn)
         G=result_beta[i]['lastnet']
         
         # saving pickle for each beta
@@ -156,9 +156,18 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
         
     return result_beta
 
-def plotMetropolisHastingsResult(result, measurename, beta, graph=None, col='purple', label=None, errorbar=True, title=None):
+def plotMetropolisHastingsResult(result, measurename, betas, graph=None, col='purple', label=None, errorbar=True, title=None):
+    
+    # betas contains the list of betas
+    # for each betas we have taken a bucket of samples
+    # each "r" {dictionary object} in result is a dictionary that contains all the info for the corresponding beta and its bucket of samples
+    # in that "r" set , there is the 'samples' , it contains all the measures taken on each sample as dictionary keys
+    
     M = [np.average(r['samples'][measurename]) for r in result]
     M_err = [np.std(r['samples'][measurename]) for r in result]
+    
+    # M and M_err contains the mean and standard deviation for that measurename for each beta
+
     
     if label==None:
         label=measurename
@@ -180,9 +189,9 @@ def plotMetropolisHastingsResult(result, measurename, beta, graph=None, col='pur
     #axs.axhline(y=C_star, color='b', label='C*', linestyle='dotted')
 
     if (errorbar==True):
-        plt.errorbar(beta, M, M_err, marker='.', ls='dotted', color=col, label=label)
+        plt.errorbar(betas, M, M_err, marker='.', ls='dotted', color=col, label=label)
     else:
-        plt.plot(beta,M,label=label, color=col)
+        plt.plot(betas,M,label=label, color=col)
 #     for i,j in zip(beta,M):
 #         axs.annotate(str(i),xy=(i -50,j+0.02))
 

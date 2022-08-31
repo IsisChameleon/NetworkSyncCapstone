@@ -11,7 +11,6 @@ import networkx as nx
 from measuresFunctions import getMeasures
 import numpy as np
 
-
 def rebalance_incoming_edges_for_node(G, node: int):
     '''G directed graph
        node node to rebalance incoming weight so that incoming weight '''
@@ -87,7 +86,12 @@ def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
 
     #Select a random edge that does not exist - keep edge to reconnect destination to where it is
     no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges()]
-    new_edge = random.choice(no_edges)
+    
+    try:
+        new_edge = random.choice(no_edges)
+    except IndexError:
+        func_name = 'TReconnectOriginOfEdgeToOtherNode' #sys._getframe().f_code.co_name
+        raise Exception(f"IndexError: This graph doesn't have any room for swapping edges with {func_name}. No non-existing edge to be created found. Graph not transformed")
     
     if weighted:
         new_weight = edge_to_reconnect[2]['weight']
