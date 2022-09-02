@@ -11,7 +11,7 @@ import time
 import warnings
 warnings.filterwarnings('ignore')
 
-from metropolisHastings import MetropolisHasting, Acceptance, iterMHBeta, plotMetropolisHastingsResult
+from metropolisHastings import MetropolisHasting, Acceptance, iterMHBeta, plotMetropolisHastingsResult, loadFromPickle
 from markovTransforms import TReconnectOriginOfEdgeToOtherNode
 from networkSigma import projectedCovarianceMatrixForDiscreteDynamicalProcesses, discreteSigma2Analytical
 from networkGenerator import makeColumnStochastic, getDirectedErdosRenyi, getDirectedColumnStochasticErdosRenyi
@@ -198,6 +198,16 @@ class Test_MetropolisHasting(unittest.TestCase):
 
         self.assertTrue(np.array_equal(expectedC, C))
         self.assertTrue(True)
+        
+class Test_MetropolisHasting(unittest.TestCase):
+    def test_1_IterMHBeta_random_regular(self):
+    
+        np.random.seed(30)
+        random.seed(30)
+
+        pickleroot = 'r_ER-100-p0.1-InDegree-NoSelf-RandomW'
+
+        result = loadFromPickle(pickleroot=pickleroot, measurenames=[], gml=False, errorbar=True, title=None, figsize=None)
 
 
 unittest.main(argv=[''], verbosity=2, exit=False)

@@ -208,7 +208,7 @@ def loadFromPickle(pickleroot, measurenames=[], gml=False, errorbar=True, title=
 
     pklFiles=[x for x in baseUri.glob('**/' + pickleroot + '*.pkl')]
 
-    patternBeta = r"beta_([0-9]*)\.pkl"
+    patternBeta = r"beta_(-?[0-9]*)\.pkl"
     patternUp = r"_up_"
 
     dataUp={ 'betas': [], 'up': [], 'results': [], 'filepaths':[]}
