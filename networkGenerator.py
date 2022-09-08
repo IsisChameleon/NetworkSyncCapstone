@@ -38,6 +38,34 @@ def getDirectedErdosRenyi(n,p,max_trials=50):
         raise Exception(f"Erdos Renyi (n={n},p={p}) is too sparse, cannot get at least 1 incoming link for every node after {number_of_trials} trials")
     return g
 
+def getDirectedConfigurationModel(din, dout, withSelfLoops=False, withRandomWeightsInitialization=False,  return_graph = True):
+    g = nx.directed_configuration_model(din, dout)
+    
+    g = nx.DiGraph(g)
+    
+    if withSelfLoops == False:
+        g.remove_edges_from(nx.selfloop_edges(g))
+    
+    actualDin = list(d for _, d in g.in_degree())
+    actualDout = list(d for _, d in g.out_degree())
+    
+    g = makeColumnStochastic(g, withRandomWeightsInitialization)
+    if (return_graph==True):
+        return g
+    else:
+        return nx.to_numpy_array(g)
+    
+fixedDegreeSequence = lambda n, din :  [din for _ in range(n)]
+
+def randomDegreeSequence(n, tot):
+    d = np.random.uniform(low=0,high=1,size=(1,n))
+    print(d)
+    d = (d * tot)/ d.sum(axis=0, keepdims=True)
+    print('random degree sequence 2:', d)
+    d = np.round(d).astype(int)
+    print('random degree sequence 3:', d, np.sum(d))
+    return list(d)
+
 def getDirectedColumnStochasticErdosRenyi(n, p, return_graph = True, max_trials=50):
     
     g = getDirectedErdosRenyi(n,p,max_trials)
