@@ -133,6 +133,8 @@ def getMeasures(g, measureList=False, measures=None):
         return measures
 
 from networkSigma import discreteSigma2Analytical
+from networkGenerator import sumColumns
+
 def getMeasuresDirected(g, measureList=False, measures=None):
     
     N=g.number_of_nodes()
@@ -144,12 +146,16 @@ def getMeasuresDirected(g, measureList=False, measures=None):
     Ex2=(1/N)*(np.sum([g.degree[i]**2 for i in g.nodes]))
     Ex=average_degree
     sigma_z=np.sqrt(Ex2  - (Ex)**2)
-    degree_variability=sigma_z/average_degree
       
     #Cnet and nx.clustering doesn't work for multigraphs, so we need to make sure the graph is a simple one
     weighted_average_clustering=sum(nx.clustering(g, weight='weight').values()) / N
- 
-    sigma2 = discreteSigma2Analytical(g)
+    average_clustering=sum(nx.clustering(g).values()) / N
+    
+    C = nx.to_numpy_array(g)
+    sumC = sumColumns(C)
+    sigma2=math.inf
+    if (np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12))):
+        sigma2 = discreteSigma2Analytical(g)
         
     if (measureList==False):
         return { \
@@ -158,7 +164,11 @@ def getMeasuresDirected(g, measureList=False, measures=None):
             'average_degree': average_degree, \
             'sigma_z': sigma_z, \
             'weighted_average_clustering': weighted_average_clustering, \
-            'discreteSigma2Analytical': sigma2
+            'discreteSigma2Analytical': sigma2, \
+            'average_clustering':average_clustering,\
+            #'degree_assortativity':degree_assortativity,\
+            #'weighted_degree_assortativity':weighted_degree_assortativity,\
+            'g':g    
                }
     if (measures==None):
         return { \
@@ -167,7 +177,11 @@ def getMeasuresDirected(g, measureList=False, measures=None):
             'average_degree': [average_degree], \
             'sigma_z': [sigma_z], \
             'weighted_average_clustering': [weighted_average_clustering], \
-            'discreteSigma2Analytical': [sigma2]
+            'discreteSigma2Analytical': [sigma2],\
+            'average_clustering':[average_clustering],\
+            #'degree_assortativity':[degree_assortativity],\
+            #'weighted_degree_assortativity':[weighted_degree_assortativity],\
+            'g':g
                }
     else:
         measures['N'].append(N)
@@ -176,6 +190,10 @@ def getMeasuresDirected(g, measureList=False, measures=None):
         measures['sigma_z'].append(sigma_z)
         measures['weighted_average_clustering'].append(weighted_average_clustering)
         measures['discreteSigma2Analytical'].append(sigma2)
+        measures['average_clustering'].append(average_clustering),\
+        #measures['degree_assortativity'].append(degree_assortativity),\
+        #measures['weighted_degree_assortativity'].append(weighted_degree_assortativity),\
+        measures['g'].append(g)
         return measures
     
 
@@ -192,15 +210,21 @@ def printSamplesMeasuresMeanAndStd(measures, sample_measure_fn=getMeasuresDirect
             print('Number of links L:              {}'.format(measures['L']))
             print('Average node degree <z>:        {:.04f}'.format(measures['average_degree']))
             print('Deviation of degree sigma_z:    {:.04f}'.format(measures['sigma_z']))
+            print('Average clustering:             {:.04f}'.format(measures['average_clustering']))
             print('Weighted average clustering:    {:.04f}'.format(measures['weighted_average_clustering']))
             print('Analytical sigma^2 discrete:    {:.04f}'.format(measures['discreteSigma2Analytical'])) 
+            #print('Degree Assortativity:           {:.04f}'.format(measures['degree_assortativity']))
+            #print('Weighted Degree Assortativity:  {:.04f}'.format(measures['weighted_degree_assortativity']))
         else:
             print('Number of nodes N:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['N']), np.std(measures['N']) ))
             print('Number of links L:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['L']), np.std(measures['L'])))
             print('Average node degree <z>:        {:.04f}  +/-  {:.04f}'.format(np.average(measures['average_degree']),np.std(measures['average_degree'])))
             print('Deviation of degree sigma_z:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['sigma_z']), np.std(measures['sigma_z'])))
+            print('Average clustering:             {:.04f}  +/-  {:.04f}'.format(np.average(measures['average_clustering']), np.std(measures['average_clustering'])))
             print('Weighted average clustering:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['weighted_average_clustering']), np.std(measures['weighted_average_clustering'])))
             print('Analytical sigma^2 discrete:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['discreteSigma2Analytical']),np.std(measures['discreteSigma2Analytical'])))
+            #print('Degree Assortativity:           {:.04f}  +/-  {:.04f}'.format(np.average(measures['degree_assortativity']),np.std(measures['degree_assortativity'])))
+            #print('Weighted Degree Assortativity:  {:.04f}  +/-  {:.04f}'.format(np.average(measures['weighted_degree_assortativity']), np.std(measures['weighted_degree_assortativity'])))
 
 def printMeasures(measures):
     if type(measures['N'])!=list:

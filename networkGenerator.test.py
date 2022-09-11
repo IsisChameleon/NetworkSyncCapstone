@@ -10,7 +10,9 @@ import copy
 import warnings
 warnings.filterwarnings('ignore')
 
-from networkGenerator import makeColumnStochastic, getDirectedErdosRenyi, sumColumns
+from networkGenerator import flattenIncomingDegree, makeColumnStochastic, getDirectedErdosRenyi, \
+sumColumns, randomDegreeSequence, fixedDegreeSequence, \
+getDirectedConfigurationModel, flattenIncomingDegree
 
 # https://gist.github.com/mogproject/fc7c4e94ba505e95fa03
 # https://stackoverflow.com/questions/40172281/unit-tests-for-functions-in-a-jupyter-notebook
@@ -181,6 +183,76 @@ class TestMakeColumnStochastic(unittest.TestCase):
         self.assertEqual(type(g), type(g2))
         self.assertEqual(type(g), type(nx.Graph()))
         
+class TestConfigurationModel(unittest.TestCase):
+    def test_FixedDegreeSequence_works(self):
+        actual = fixedDegreeSequence(10, 3)
+        expected = [3 for _ in range(10)]
+        self.assertEqual(actual, expected)
+        
+    def test_RandomDegreeSequence(self):
+        np.random.seed(30)
+        random.seed(30)
+        actual = randomDegreeSequence(10, 100)
+        expectedLength = 10
+        expectedSum = 100
+        self.assertEqual(len(actual), expectedLength)
+        self.assertEqual(sum(actual), expectedSum)
+        print('test_RandomDegreeSequence actual sequence:', actual)
+        
+    def test_getDirectedConfigurationModel(self):
+        np.random.seed(30)
+        random.seed(30)
+        din = fixedDegreeSequence(8, 5)
+        dout = randomDegreeSequence(8, 8*5)
 
+        g = getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True)
+
+        self.assertEqual([4, 4, 2, 4, 3, 3, 3, 3], list(d for _, d in g.in_degree()))
+        self.assertEqual([6, 2, 4, 1, 4, 2, 6, 1], list(d for _, d in g.out_degree()))
+        
+    def test_flattenDin(self):
+
+        expected_din=5
+        din = fixedDegreeSequence(8, expected_din)
+        dout = randomDegreeSequence(8, 8*expected_din)
+        g = getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True)
+        g = flattenIncomingDegree(g, expected_din )
+        self.assertEqual(list(d for _, d in g.in_degree()), [expected_din for _ in range(8)])
+        
+    def test_columnStochasticConfigurationModelWithFixedInDegree(self):
+        
+        expected_din=5
+        N=10
+        din = fixedDegreeSequence(N, expected_din)
+        dout = randomDegreeSequence(N, N*expected_din)
+        self.assertEqual(sum(dout), sum(din))
+        g = getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True)
+        g = flattenIncomingDegree(g, expected_din )
+        g = makeColumnStochastic(g)
+        self.assertEqual(list(d for _, d in g.in_degree()), [expected_din for _ in range(N)])
+                
+        C = nx.to_numpy_array(g)
+        sumC = sumColumns(C)
+        self.assertTrue(np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)))
+        
+    def test_columnStochasticConfigurationModelWithFixedInDegree(self):
+        
+        expected_din=5
+        N=8
+        din = fixedDegreeSequence(N, expected_din)
+        dout = randomDegreeSequence(N, N*expected_din)
+        self.assertEqual(sum(dout), sum(din))
+        g = getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True)
+        g = flattenIncomingDegree(g, expected_din )
+        g = makeColumnStochastic(g, with_random_weights_initialization=False)
+        
+        self.assertEqual(list(d for _, d in g.in_degree()), [expected_din for _ in range(N)])
+                
+        C = nx.to_numpy_array(g)
+        sumC = sumColumns(C)
+        self.assertTrue(np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)))
+        #self.assertTrue(np.all(C == 0.2 or C == 0))
+        
+        
 
 unittest.main(argv=[''], verbosity=2, exit=False)

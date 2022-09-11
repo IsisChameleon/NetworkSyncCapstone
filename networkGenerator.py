@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+import random
 
 
 sumColumns = lambda C :  C.sum(axis=0, keepdims=True)
@@ -38,18 +39,12 @@ def getDirectedErdosRenyi(n,p,max_trials=50):
         raise Exception(f"Erdos Renyi (n={n},p={p}) is too sparse, cannot get at least 1 incoming link for every node after {number_of_trials} trials")
     return g
 
-def getDirectedConfigurationModel(din, dout, withSelfLoops=False, withRandomWeightsInitialization=False,  return_graph = True):
-    g = nx.directed_configuration_model(din, dout)
-    
-    g = nx.DiGraph(g)
+def getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True):
+    g = nx.directed_configuration_model(din, dout, create_using=nx.DiGraph)
     
     if withSelfLoops == False:
         g.remove_edges_from(nx.selfloop_edges(g))
     
-    actualDin = list(d for _, d in g.in_degree())
-    actualDout = list(d for _, d in g.out_degree())
-    
-    g = makeColumnStochastic(g, withRandomWeightsInitialization)
     if (return_graph==True):
         return g
     else:
@@ -58,13 +53,41 @@ def getDirectedConfigurationModel(din, dout, withSelfLoops=False, withRandomWeig
 fixedDegreeSequence = lambda n, din :  [din for _ in range(n)]
 
 def randomDegreeSequence(n, tot):
-    d = np.random.uniform(low=0,high=1,size=(1,n))
-    print(d)
+    d = np.random.uniform(low=0,high=1,size=(n))
     d = (d * tot)/ d.sum(axis=0, keepdims=True)
-    print('random degree sequence 2:', d)
+
     d = np.round(d).astype(int)
-    print('random degree sequence 3:', d, np.sum(d))
+    diff = tot - d.sum(axis=0)
+    if diff > 0:
+        d[0]+=diff
+    if diff < 0:
+        valid_i = random.choice([i for i, deg in enumerate(d) if deg + diff > 0])
+        d[valid_i]+=diff
+
     return list(d)
+
+def flattenIncomingDegree(g, expectedDin):
+    '''
+    The configuration model doesn't respect the incoming degree or outgoing degree specs 
+    after we have removed self loops and double edges.
+    To make Din all equals, we're just going to add the missing edges
+    (This will obviously also perturb Dout)
+    
+    Run before adding the weights in the edges
+    '''
+    din = list(d for _, d in g.in_degree())
+    nodeIndexWhereDinNotAsExpected = [i for i, d in g.in_degree() if d != expectedDin]
+    
+    for node in nodeIndexWhereDinNotAsExpected:
+        diff = expectedDin - g.in_degree(node)
+        if diff < 0: 
+            raise "Something's fishy, if we lost some edges by removing them, fix your code"
+        
+        for _ in range(diff):
+            originNode = random.choice([n for n in g.nodes() if n != node and (n, node) not in g.edges()])
+            g.add_edges_from([(originNode, node)])
+
+    return g
 
 def getDirectedColumnStochasticErdosRenyi(n, p, return_graph = True, max_trials=50):
     

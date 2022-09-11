@@ -12,6 +12,8 @@ import matplotlib.transforms as transforms
 from measuresFunctions import getMeasures, printSamplesMeasuresMeanAndStd, printMeasures, plotMeasures
 from pickleUtil import pickleLoad, pickleSave
 
+DATAFOLDER='./data'
+
 def Acceptance(g, gnext, measure_fn, **parameters):
     '''
     Determine the probability of acceptance of the new proposed network gnext
@@ -130,10 +132,10 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
     parameters={'beta':b}
     result_burnin=MetropolisHasting(G, T, number_of_samples=1, thinning=5000, max_propositions=5000, constraint_measure_fn=constraint_measure_fn, sample_measure_fn=sample_measure_fn, **parameters)
     G=result_burnin['lastnet']
-    pickleSave(result_burnin, picklename + '_burnin_'+str(b), '.' )
+    pickleSave(result_burnin, picklename + '_burnin_'+str(b), DATAFOLDER )
     
     # taking samples iterations (number_samples for each beta)
-    bprev=0
+    bprev=betas[0]
     for b in betas:
         print('--------------------------------------------------------------')
         print('                    Beta = ', b)
@@ -148,7 +150,7 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
             updown = 'up'
         else:
             updown='down'
-        pickleSave(result_beta[i], 'r_' + picklename + '_'+ updown + '_beta_'+str(b), '.' )
+        pickleSave(result_beta[i], 'r_' + picklename + '_'+ updown + '_beta_'+str(b), DATAFOLDER )
         
         # setting up next iter
         i+=1
@@ -204,7 +206,7 @@ def plotMetropolisHastingsResult(result, measurename, betas, graph=None, col='pu
 def loadFromPickle(pickleroot, measurenames=[], gml=False, errorbar=True, title=None, figsize=None):
 
     # name like r_Gcatu_TSE_up_beta_3000.pkl
-    baseUri=Path('.')
+    baseUri=Path(DATAFOLDER)
 
     pklFiles=[x for x in baseUri.glob('**/' + pickleroot + '*.pkl')]
 
