@@ -181,7 +181,7 @@ def getMeasuresDirected(g, measureList=False, measures=None):
             'average_clustering':[average_clustering],\
             #'degree_assortativity':[degree_assortativity],\
             #'weighted_degree_assortativity':[weighted_degree_assortativity],\
-            'g':g
+            'g':[g]
                }
     else:
         measures['N'].append(N)
