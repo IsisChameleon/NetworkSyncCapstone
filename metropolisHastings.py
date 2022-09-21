@@ -130,7 +130,7 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
     
     b=betas[0]
     parameters={'beta':b}
-    result_burnin=MetropolisHasting(G, T, number_of_samples=1, thinning=5000, max_propositions=25000, constraint_measure_fn=constraint_measure_fn, sample_measure_fn=sample_measure_fn, **parameters)
+    result_burnin=MetropolisHasting(G, T, number_of_samples=1, thinning=burnin, max_propositions=max_propositions, constraint_measure_fn=constraint_measure_fn, sample_measure_fn=sample_measure_fn, **parameters)
     G=result_burnin['lastnet']
     pickleSave(result_burnin, picklename + '_burnin_'+str(b), DATAFOLDER )
     
