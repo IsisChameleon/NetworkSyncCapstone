@@ -132,7 +132,7 @@ def getMeasures(g, measureList=False, measures=None):
         measures['N_C1'].append(N_largest_clique)
         return measures
 
-from networkSigma import discreteSigma2Analytical
+from networkSigma import discreteSigma2Analytical, continuousSigma2Analytical
 from networkGenerator import sumColumns
 
 def getMeasuresDirected(g, measureList=False, measures=None):
@@ -197,6 +197,51 @@ def getMeasuresDirected(g, measureList=False, measures=None):
         return measures
     
 
+def getMeasuresDirectedContinuous(g, measureList=False, measures=None):
+    
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+    
+    sum_degree_nodes=np.sum([g.degree[i] for i in g.nodes])
+    average_degree = sum_degree_nodes/ N
+    
+    Ex2=(1/N)*(np.sum([g.degree[i]**2 for i in g.nodes]))
+    Ex=average_degree
+    sigma_z=np.sqrt(Ex2  - (Ex)**2)
+          
+    C = nx.to_numpy_array(g)
+    sumC = sumColumns(C)
+    sigma2=math.inf
+    if (np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12))):
+        sigma2 = continuousSigma2Analytical(g)
+        
+    if (measureList==False):
+        return { \
+            'N': N, \
+            'L': L, \
+            'average_degree': average_degree, \
+            'sigma_z': sigma_z, \
+            'continuousSigma2Analytical': sigma2, \
+            'g':g    
+               }
+    if (measures==None):
+        return { \
+            'N': [N], \
+            'L': [L], \
+            'average_degree': [average_degree], \
+            'sigma_z': [sigma_z], \
+            'continuousSigma2Analytical': [sigma2],\
+            'g':[g]
+               }
+    else:
+        measures['N'].append(N)
+        measures['L'].append(L)
+        measures['average_degree'].append(average_degree)
+        measures['sigma_z'].append(sigma_z)
+        measures['continuousSigma2Analytical'].append(sigma2)
+        measures['g'].append(g)
+        return measures
+
 def plotDegreeDistribution(g):
     deg_sequence =  [d for v, d in g.degree()]
     fig, ax = plt.subplots()
@@ -225,6 +270,22 @@ def printSamplesMeasuresMeanAndStd(measures, sample_measure_fn=getMeasuresDirect
             print('Analytical sigma^2 discrete:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['discreteSigma2Analytical']),np.std(measures['discreteSigma2Analytical'])))
             #print('Degree Assortativity:           {:.04f}  +/-  {:.04f}'.format(np.average(measures['degree_assortativity']),np.std(measures['degree_assortativity'])))
             #print('Weighted Degree Assortativity:  {:.04f}  +/-  {:.04f}'.format(np.average(measures['weighted_degree_assortativity']), np.std(measures['weighted_degree_assortativity'])))
+
+    if (sample_measure_fn.__name__=='getMeasuresDirectedContinuous'):
+        if type(measures['N'])!=list:
+            print('Number of nodes N:              {}'.format(measures['N']))
+            print('Number of links L:              {}'.format(measures['L']))
+            print('Average node degree <z>:        {:.04f}'.format(measures['average_degree']))
+            print('Deviation of degree sigma_z:    {:.04f}'.format(measures['sigma_z']))
+            print('Analytical sigma^2 continuous:  {:.04f}'.format(measures['continuousSigma2Analytical'])) 
+            #print('Degree Assortativity:           {:.04f}'.format(measures['degree_assortativity']))
+            #print('Weighted Degree Assortativity:  {:.04f}'.format(measures['weighted_degree_assortativity']))
+        else:
+            print('Number of nodes N:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['N']), np.std(measures['N']) ))
+            print('Number of links L:              {:.04f}  +/-  {:.04f}'.format(np.average(measures['L']), np.std(measures['L'])))
+            print('Average node degree <z>:        {:.04f}  +/-  {:.04f}'.format(np.average(measures['average_degree']),np.std(measures['average_degree'])))
+            print('Deviation of degree sigma_z:    {:.04f}  +/-  {:.04f}'.format(np.average(measures['sigma_z']), np.std(measures['sigma_z'])))
+            print('Analytical sigma^2 continuous:  {:.04f}  +/-  {:.04f}'.format(np.average(measures['continuousSigma2Analytical']),np.std(measures['continuousSigma2Analytical'])))
 
 def printMeasures(measures):
     if type(measures['N'])!=list:
