@@ -10,7 +10,7 @@ import copy
 import warnings
 warnings.filterwarnings('ignore')
 
-from networkGenerator import flattenIncomingDegree, makeColumnStochastic, getDirectedErdosRenyi, \
+from networkGenerator import flattenIncomingDegree, getSBM, makeColumnStochastic, getDirectedErdosRenyi, \
 sumColumns, randomDegreeSequence, fixedDegreeSequence, \
 getDirectedConfigurationModel, flattenIncomingDegree
 
@@ -22,6 +22,7 @@ getDirectedConfigurationModel, flattenIncomingDegree
 import sys
 import unittest
 import networkx as nx
+from networkx.algorithms import community
 import numpy as np
 from math import isclose
 
@@ -251,6 +252,14 @@ class TestConfigurationModel(unittest.TestCase):
         C = nx.to_numpy_array(g)
         sumC = sumColumns(C)
         self.assertTrue(np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)))
+      
+    def test_SBM(self):
+        sizes = [30,30,40]
+        ps = [[0.5, 0.05, 0.02], 
+              [0.05, 0.5, 0.07], 
+              [0.02, 0.07, 0.5]]
+        g = getSBM(sizes, ps)
+        
         #self.assertTrue(np.all(C == 0.2 or C == 0))
         
         

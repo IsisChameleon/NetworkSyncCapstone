@@ -14,3 +14,4 @@ data/**
 *.csv
 *.npy
 *.pkl
+blobby

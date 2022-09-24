@@ -212,3 +212,31 @@ def drawCurvedEdgesGraph(G, ax=None):
     nx.draw_networkx_edge_labels(G, pos=layout, edge_labels=straight_edge_labels,rotate=False)
 
     plt.show()
+    
+
+import matplotlib.pyplot as plt
+def drawMatrix(C=None, g=None, experiment_title=None, folder=None):
+    
+    if g==None and C==None:
+        raise "Please give me something to draw, a graph or the matrix of a graph"
+    
+    if g!=None:
+        C=nx.to_numpy_array(g)
+        
+    N=C.shape[0]
+        
+    plt.imshow(C, interpolation='nearest', cmap=plt.cm.gnuplot2,
+                vmin=0)
+
+    plt.colorbar()
+    plt.suptitle(f'{experiment_title} - Graph weighted adjacency matrix', size=18)
+    plt.tight_layout()  
+    plt.show()
+    
+    if (folder !=None):
+        plt.imsave(f'{folder}/{experiment_title}.jpg', C, cmap=plt.cm.gnuplot2,
+                vmin=0)
+    
+    
+    
+    

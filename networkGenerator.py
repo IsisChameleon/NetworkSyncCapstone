@@ -50,6 +50,9 @@ def getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph =
     else:
         return nx.to_numpy_array(g)
     
+def getSBM(sizes, ps, seed=None, withSelfLoops=False):   
+    return nx.stochastic_block_model(sizes, ps, directed=True, selfloops=withSelfLoops, sparse=True, seed=seed)
+
 fixedDegreeSequence = lambda n, din :  [din for _ in range(n)]
 
 def randomDegreeSequence(n, tot):
