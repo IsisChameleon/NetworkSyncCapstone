@@ -11,6 +11,8 @@ import networkx as nx
 from measuresFunctions import getMeasures
 import numpy as np
 
+from networkGenerator import sumColumns, makeColumnStochastic
+
 def rebalance_incoming_edges_for_node(G, node: int):
     '''G directed graph
        node node to rebalance incoming weight so that incoming weight '''
@@ -105,7 +107,7 @@ def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
 
     return g
 
-def TDeleteEdgeAddEdge(g_orig, inPlace=True):
+def TDeleteEdgeAddEdgeOld(g_orig, inPlace=True):
     ''' Designed for undirected graph - will need to review for directed graph '''
     
     "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
@@ -124,6 +126,46 @@ def TDeleteEdgeAddEdge(g_orig, inPlace=True):
 
     g.add_edge(node_pair[0], node_pair[1])
     g.remove_edge(edge[0], edge[1])
+    return(g)
+
+def TDeleteEdgeAddEdge(g_orig, inPlace=True, preserveColumnStochastic=False):
+    ''' Designed for undirected graph - will need to review for directed graph '''
+    
+    "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
+    
+    if inPlace == False:
+        g=copy.deepcopy(g_orig)
+    else:
+        g=g_orig
+        
+    # Determine if network edges are weighted
+    weighted=True
+    weights = nx.get_edge_attributes(g, 'weight')
+    if (weights == {}):
+        weighted=False
+
+    '''Swap edges'''
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+    edge = list(g.edges())[np.random.randint(0,L)]
+    nodes_with_no_links = [ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) not in g.edges() and i != j]
+    node_pair = random.choice(nodes_with_no_links)
+
+    if weighted == True:
+        # selecting the weight of the edge to delete to add it to the edge to add
+        weightToSwap = weights[(edge[0], edge[1])]
+        g.add_edge(node_pair[0], node_pair[1], weight=weightToSwap)
+    else:
+        g.add_edge(node_pair[0], node_pair[1])
+        
+    g.remove_edge(edge[0], edge[1])
+    
+    if preserveColumnStochastic==True:
+        sumC = sumColumns(nx.to_numpy_array(g))
+        if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
+            # if all columns sums are not equal to 1, then we need to rebalance
+            g = makeColumnStochastic(g, with_random_weights_initialization=False)
+            
     return(g)
 
 def TSwapEdges(g_orig, inPlace=True):
