@@ -1,3 +1,4 @@
+from cmath import nan
 import copy
 import networkx as nx
 import numpy as np
@@ -150,7 +151,8 @@ def iterMHBeta(Gstart, T, number_of_samples, betas, relaxation_time, constraint_
             updown = 'up'
         else:
             updown='down'
-        pickleSave(result_beta[i], 'r_' + picklename + '_'+ updown + '_beta_'+str(b), DATAFOLDER )
+        #pickleSave(result_beta[i], 'r_' + picklename + '_'+ updown + '_beta_'+str(b), DATAFOLDER )
+        pickleSave(result_beta[i], picklename + '_'+ updown + '_beta_'+str(b), DATAFOLDER )
         
         # setting up next iter
         i+=1
@@ -268,4 +270,146 @@ def loadFromPickle(pickleroot, measurenames=[], gml=False, errorbar=True, title=
         #fig.savefig("{}-{:03}.png".format(title, np.random.randint(1000000)))
         
     return {'up': df, 'down': dfd, 'figax': graphs}
+
+
+'''
+#############################################################################################
+LOAD SAMPLE FROM PICKLE FILES
+-------------------------------
+Reads all the pickle files start with <experiment_name> in the folder <data_folder>
+Assembles them into a dataframe containing all samples from the experiment for each beta
+Columns of the dataframe are :
+beta : parameter beta
+up : obtained while going up in Beta or down (True or False)
+g : sample graph
+time : iteration number, used to order samples along with beta
+file : pickle file name on <datafolder>
+experiment : experiment name
+comment : to determine if this is a startnet, or a burnin sample
+#############################################################################################
+'''
+
+def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name='discreteSigma2Analytical'):
+
+    # name like r_Gcatu_TSE_up_beta_3000.pkl
+    baseUri=Path(datafolder)
+
+    pklFiles=[x for x in baseUri.glob('**/' + experiment_name + '*.pkl')]
+
+    if pklFiles==[]:
+        print(f'No files found here {datafolder}/{experiment_name}*.pkl')
+        return
+
+    patternBeta = r"beta_(-?[0-9]*)\.pkl"
+    patternUp = r"_up_"
+    patternStartNet = r"StartNet\.pkl"
+    patternBurnin = r"_burnin_(-?[0-9]*)\.pkl"
+
+    data  ={ 'beta': [], 'up': [], 'g': [], 'time':[], 'file':[], 'experiment':[], 'comment':[], constraint_name: []}
+
+    for i, fn in enumerate(pklFiles):
         
+        print(f'Processing file {i}, {fn}')
+        
+        # Saving initial network 
+        if re.search(patternStartNet, fn.name)!= None:
+            result=pickleLoad(str(fn.stem), str(fn.parents[0]), silent=False)
+            data['beta'].append(nan)
+            data['up'].append(True)
+            data['g'].append(result)
+            data['time'].append(nan)
+            data['file'].append(fn)
+            data['experiment'].append(experiment_name)
+            data['comment'].append('startNet')
+            data[constraint_name].append(nan)
+            continue
+        
+        comment=''
+        if re.search(patternBurnin, fn.name)!=None:
+        # Reading burning results
+            print('Reading burnin file')
+            beta = int(re.search(patternBurnin, fn.name).group(1))
+            up=True
+            comment='burnin'
+        else:
+        # Reading standard result
+            beta=int(re.search(patternBeta, fn.name).group(1))
+            up=False
+            if re.search(patternUp, fn.name)!= None:
+                up=True
+            else:
+                up=False
+
+        #loading pickle file
+        result=pickleLoad(str(fn.stem), str(fn.parents[0]), silent=True)
+
+        for i, (sample, constraint_measure) in enumerate(zip(result['samples']['g'], result['samples'][constraint_name])):
+
+            data['beta'].append(beta)
+            data['up'].append(up)
+            data['g'].append(sample)
+            data[constraint_name].append(constraint_measure)
+            data['time'].append(i)
+            data['file'].append(fn)
+            data['experiment'].append(experiment_name)
+            data['comment'].append(comment)
+
+    df = pd.DataFrame.from_dict(data)
+    df = df.sort_values(by=['beta', 'time'])
+            
+    return df
+
+applyMeasureToGraph = lambda df, measure_fn : df.g.apply(lambda g : measure_fn(g))
+
+def analyzeMetropolisHastingsGraphs(df, measure_fn, plot=True):
+    '''
+    #############################################################################################
+    LOAD SAMPLE FROM PICKLE FILES
+    -------------------------------
+
+    To be used after loading samples from pickle into a dataframe with loadSamplesFromPickle
+
+    Parameters:
+        df : dataframe with at least the following columns ' :
+            'g' to contain the graph
+            'beta': beta value at which this graph was produced
+            
+        measure_fn : function that takes only the graph as parameter and returns 
+        
+    Returns df with an extra column, the measure name that was requested
+
+    #############################################################################################
+    '''
+    
+    # df : pandas.Dataframe that contains a sequence of graphs and their associated betas
+    
+    measure_name = measure_fn.__name__
+    
+    if measure_name not in df.keys():
+        df[measure_name]=df.g.apply(lambda g : measure_fn(g))
+    
+    M = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).mean().sort_values(by='beta', ascending=True)
+    M_err = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).std().sort_values(by='beta', ascending=True)
+    
+    # M and M_err contains the mean and standard deviation for that measure_name for each beta
+       
+    df_avg = pd.concat( [M['beta'],M[measure_name], M_err[measure_name] ], keys=['beta', f'{measure_name}_mean', f'{measure_name}_std'], axis=1)
+
+    if plot==True:
+        label=measure_name
+
+        fig, axs = plt.subplots(1, 1, figsize=(9, 6))
+            
+        plt.grid(linestyle='-', linewidth=0.5)
+
+        axs.set_title(f'{measure_name} vs beta')
+        axs.set_xlabel('beta')
+        axs.set_ylabel(measure_name)
+        axs.legend()
+
+        plt.errorbar(M['beta'], M[measure_name], M_err[measure_name], marker='.', ls='dotted', color='purple', label=label)
+
+    
+    return df, df_avg
+
+

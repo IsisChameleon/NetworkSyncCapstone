@@ -11,11 +11,12 @@ import time
 import warnings
 warnings.filterwarnings('ignore')
 
-from metropolisHastings import MetropolisHasting, Acceptance, iterMHBeta, plotMetropolisHastingsResult, loadFromPickle
+from metropolisHastings import MetropolisHasting, Acceptance, iterMHBeta, plotMetropolisHastingsResult, analyzeMetropolisHastingsGraphs, loadSamplesFromPickle, loadFromPickle
 from markovTransforms import TReconnectOriginOfEdgeToOtherNode
 from networkSigma import projectedCovarianceMatrixForDiscreteDynamicalProcesses, discreteSigma2Analytical
 from networkGenerator import makeColumnStochastic, getDirectedErdosRenyi, getDirectedColumnStochasticErdosRenyi
 from measuresFunctions import getMeasuresDirected
+from pickleUtil import pickleSave, pickleLoad
 
 class Test_Acceptance(unittest.TestCase):
 
@@ -205,9 +206,21 @@ class Test_MetropolisHasting(unittest.TestCase):
         np.random.seed(30)
         random.seed(30)
 
-        pickleroot = 'r_ER-100-p0.1-InDegree-NoSelf-RandomW'
+        pickleroot = './data/r_ER-100-p0.1-InDegree-NoSelf-RandomW'
 
         result = loadFromPickle(pickleroot=pickleroot, measurenames=[], gml=False, errorbar=True, title=None, figsize=None)
+
+class Test_MetropolisHasting_AnalyseResults(unittest.TestCase):
+    def test_1_loadSamples_And_Analyze(self):
+    
+        np.random.seed(30)
+        random.seed(30)
+
+        df = loadSamplesFromPickle('r_FixIn-100-DegIn8-InDegree-NoSelf-FixedW', datafolder='./data')
+        df, dfm = analyzeMetropolisHastingsGraphs(df, nx.average_clustering)
+        dfm.plot(x='beta', y='average_clustering_mean', kind='bar')
+        dfm.plot(x='beta', y='average_clustering_mean', yerr=dfm['average_clustering_std'], kind='bar', capsize=4, rot=90)
+        df.plot(x='beta', y='average_clustering', kind='scatter')
 
 
 unittest.main(argv=[''], verbosity=2, exit=False)
