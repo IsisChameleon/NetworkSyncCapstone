@@ -302,7 +302,7 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
 
     patternBeta = r"beta_(-?[0-9]*)\.pkl"
     patternUp = r"_up_"
-    patternStartNet = r"StartNet\.pkl"
+    patternStartNet = r"StartNet"
     patternBurnin = r"_burnin_(-?[0-9]*)\.pkl"
 
     data  ={ 'beta': [], 'up': [], 'g': [], 'time':[], 'file':[], 'experiment':[], 'comment':[], constraint_name: []}

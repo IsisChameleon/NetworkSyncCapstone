@@ -235,5 +235,3 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
                 vmin=0)
     
     
-    
-    
