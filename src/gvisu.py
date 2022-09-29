@@ -1,3 +1,4 @@
+import atexit
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
@@ -210,8 +211,6 @@ def drawCurvedEdgesGraph(G, ax=None):
     straight_edge_labels = {edge: edge_weights[edge] for edge in straight_edges}
     my_draw_networkx_edge_labels(G, pos=layout,  edge_labels=curved_edge_labels,rotate=False, rad = arc_rad)
     nx.draw_networkx_edge_labels(G, pos=layout, edge_labels=straight_edge_labels,rotate=False)
-
-    plt.show()
     
 
 import matplotlib.pyplot as plt
@@ -233,5 +232,12 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
     if (folder !=None):
         plt.imsave(f'{folder}/{experiment_title}.jpg', C, cmap=plt.cm.gnuplot2,
                 vmin=0)
+        
+def drawGraph(g, experiment_title=None, folder=None, showImages=True, **kwargs):
+    plt.figure(figsize=(16,9))
+    fig, ax = plt.subplots()
+    drawCurvedEdgesGraph(g, ax)
+
+    
     
     

@@ -16,3 +16,4 @@ data/**
 *.pkl
 blobby
 images/**
+graphs/**

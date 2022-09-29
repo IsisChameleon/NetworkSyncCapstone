@@ -55,7 +55,7 @@ def TReconnectDestinationOfEdgeToOtherNode(g_orig, inPlace=True):
     rebalance_incoming_edges_for_node(g, edge_to_reconnect[1])
     return(g)
 
-def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
+def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True, preventSelfLoops=False):
     """Transformation for Metropolis Hasting algorithm that keeps out-degree constant, but not in-degree
         MCMC transformation that preserves number of edges and nodes, and incoming degree distribution but not outgoing degree distribution"
         Applicable for directed networks"
@@ -87,7 +87,10 @@ def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True):
     edge_to_reconnect = random.choice(list(g.edges(data=True)))
 
     #Select a random edge that does not exist - keep edge to reconnect destination to where it is
-    no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges()]
+    if preventSelfLoops == True:
+        no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges() and i != edge_to_reconnect[1]]
+    else:
+        no_edges = [(i,edge_to_reconnect[1]) for i in g.nodes() if (i,edge_to_reconnect[1]) not in g.edges()]
     
     try:
         new_edge = random.choice(no_edges)
@@ -165,6 +168,57 @@ def TDeleteEdgeAddEdge(g_orig, inPlace=True, preserveColumnStochastic=False):
         if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
             # if all columns sums are not equal to 1, then we need to rebalance
             g = makeColumnStochastic(g, with_random_weights_initialization=False)
+            
+    return(g)
+
+def TDeleteEdgeAddEdgeWeightedColumnStochastic(g_orig, inPlace=True, preserveColumnStochastic=True):
+    ''' Designed for undirected graph - will need to review for directed graph '''
+    
+    "MCMC transformation that preserves number of edges and nodes, but not degree distribution"
+    
+    if inPlace == False:
+        g=copy.deepcopy(g_orig)
+    else:
+        g=g_orig
+        
+    # Determine if network edges are weighted
+    weighted=True
+    weights = nx.get_edge_attributes(g, 'weight')
+    if (weights == {}):
+        weighted=False
+
+    '''Swap edges'''
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+
+    # Choose an existing edge to delete
+    if weighted==True and preserveColumnStochastic == True:
+        # we don't want to select an edge to delete that has weight 1, because otherwise there'll be no more links to that column's node
+        # so no way to make the graph column stochastic
+        edge = random.choice([ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) in g.edges() and i != j and weights[(i,j)]!=1])
+    else:
+        edge = random.choice([ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) in g.edges() and i != j])
+    nodes_with_no_links = [ (i, j) for i in g.nodes() for j in g.nodes() if (i,j) not in g.edges() and i != j]
+    node_pair = random.choice(nodes_with_no_links)
+
+    if weighted == True:
+        # selecting the weight of the edge to delete to add it to the edge to add
+        weightToSwap = weights[(edge[0], edge[1])]
+        g.add_edge(node_pair[0], node_pair[1], weight=weightToSwap)
+    else:
+        g.add_edge(node_pair[0], node_pair[1])
+        
+    g.remove_edge(edge[0], edge[1])
+    
+    if preserveColumnStochastic==True:
+        sumC = sumColumns(nx.to_numpy_array(g))
+        if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
+            # if all columns sums are not equal to 1, then we need to rebalance
+            g = makeColumnStochastic(g, with_random_weights_initialization=False)
+        # check
+        sumC = sumColumns(nx.to_numpy_array(g))
+        if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
+            print('Could not make column stochastic C : ')
             
     return(g)
 
