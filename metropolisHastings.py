@@ -13,7 +13,9 @@ import matplotlib.transforms as transforms
 from measuresFunctions import getMeasures, printSamplesMeasuresMeanAndStd, printMeasures, plotMeasures
 from pickleUtil import pickleLoad, pickleSave
 
-DATAFOLDER='./data'
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+from globalParams import DATAFOLDER
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 def Acceptance(g, gnext, measure_fn, **parameters):
     '''

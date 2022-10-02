@@ -180,12 +180,13 @@ def my_draw_networkx_edge_labels(
 
 # https://stackoverflow.com/questions/22785849/drawing-multiple-edges-between-two-nodes-with-networkxb
 
-def drawCurvedEdgesGraph(G, ax=None):
+def drawCurvedEdgesGraph(G, ax=None, layout=None):
 
     if ax==None:
         fig, ax = plt.subplots()
 
-    layout = nx.kamada_kawai_layout(G)
+    if layout==None:
+        layout = nx.kamada_kawai_layout(G)
 
     # Draw nodes and their labels
 
