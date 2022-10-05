@@ -222,11 +222,11 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
     N=C.shape[0]
     
     if showImages==True:    
-        plt.imshow(C, interpolation='nearest', cmap=plt.cm.gnuplot2,
-                    **kwargs)
+        fig, ax = plt.subplots(figsize=(9,5))
+        plt.imshow(C, interpolation='nearest', **kwargs)
 
         plt.colorbar()
-        plt.suptitle(f'{experiment_title} - Graph weighted adjacency matrix', size=18)
+        plt.suptitle(f'{experiment_title}', size=18)
         plt.tight_layout()  
         plt.show()
     
@@ -235,8 +235,7 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
                 vmin=0)
         
 def drawGraph(g, experiment_title=None, folder=None, showImages=True, **kwargs):
-    plt.figure(figsize=(16,9))
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(16,9))
     drawCurvedEdgesGraph(g, ax)
 
     

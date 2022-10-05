@@ -143,6 +143,15 @@ def continuousSigma2Analytical(g):
     projectedCovarianceMatrix = projectedCovarianceMatrixForContinuousDynamicalProcesses
     return np.trace(projectedCovarianceMatrix(C))/C.shape[0]
 
+def continuousSigma2AnalyticalHT(g):
+    # Warning: Your network must be synchronizable in order to use this function. I didn't include a test for eigenvalues here because it
+    # would have added compute time, but your largest eigenvalue must be 1.
+    # It will throw an exception if the calculation of the projectedCovarianceMatrix fails to converge
+    
+    C = nx.to_numpy_array(g)
+    projectedCovarianceMatrix = projectedCovarianceMatrixForContinuousDynamicalProcesses
+    return np.trace(projectedCovarianceMatrix(C, tolerance=100))/C.shape[0]
+
     
 import copy
 
