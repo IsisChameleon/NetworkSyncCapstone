@@ -12,7 +12,7 @@ import copy
 import warnings
 warnings.filterwarnings('ignore')
 
-from markovTransforms import TReconnectOriginOfEdgeToOtherNode, TDeleteEdgeAddEdge
+from markovTransforms import TReconnectOriginOfEdgeToOtherNode, TDeleteEdgeAddEdge, TSwapEdgesDirected
 from networkGenerator import sumColumns
 
 class Test_TReconnectOriginOfEdgeToOtherNode(unittest.TestCase):
@@ -123,6 +123,58 @@ class Test_AddEdgeDeleteEdge(unittest.TestCase):
         sumC = sumColumns(new_C)
         self.assertTrue(np.all(np.isclose(sumC, np.array([[1 for _ in range(new_C.shape[0])]]), atol=1e-12)))
 
+class Test_TSwapEdgesDirected(unittest.TestCase):
+    
+    def test_5_TSwapEdgesDirected(self):
+        np.random.seed(30)
+        random.seed(30)
+        C = np.array([[0,1,1,0],
+                      [1,0,0,2],
+                      [0,3,2,1],
+                      [2,0,1,0]])
+        print('T5 - Before Transformation  TSwapEdgesDirected: ', C)
+        n= C.shape[0]
+        g = nx.from_numpy_array(C, create_using=nx.DiGraph)
+
+        new_g = TSwapEdgesDirected(g, inPlace=False, preserveColumnStochastic=False, checkDegreeDistributionIntact=True)
+        new_C = nx.to_numpy_array(new_g)
+        print('T5 - After  Transformation  TSwapEdgesDirected: ', new_C)
+    
+        # expected_new_C = np.array([[0,1,0,1],  when I finish transferring the weight after swap
+        #                            [1,0,2,0],
+        #                            [0,3,2,1],
+        #                            [2,0,1,0]])
+        expected_new_C = np.array([[0,1,0,1],
+                                   [1,0,1,0],
+                                   [0,3,2,1],
+                                   [2,0,1,0]])
+        self.assertTrue(np.array_equal(expected_new_C, new_C))
+        self.assertEqual(new_g.number_of_nodes(), g.number_of_nodes())
+        self.assertEqual(new_g.number_of_edges(), g.number_of_edges())
+        
+    def test_6_TSwapEdgesDirected_maintainColumnStochastic(self):
+        np.random.seed(30)
+        random.seed(30)
+        C = np.array([[0,1,1,0],
+                      [1,0,0,2],
+                      [0,3,2,1],
+                      [2,0,1,0]])
+        print('T6 - Before Transformation  TSwapEdgesDirected: ', C)
+        n= C.shape[0]
+        g = nx.from_numpy_array(C, create_using=nx.DiGraph)
+
+        new_g = TSwapEdgesDirected(g, inPlace=False, preserveColumnStochastic=True, checkDegreeDistributionIntact=True)
+        new_C = nx.to_numpy_array(new_g)
+        print('T6 - After  Transformation  TSwapEdgesDirected: ', new_C)
+        expected_new_C = np.array([[0.,0.25,0.,0.5],
+                                    [1/3,0.,0.25,0.],
+                                    [0.,0.75,0.5, 0.5],
+                                    [2/3,0.,0.25,0.]])
+        self.assertTrue(np.array_equal(expected_new_C, new_C))
+        self.assertEqual(new_g.number_of_nodes(), g.number_of_nodes())
+        self.assertEqual(new_g.number_of_edges(), g.number_of_edges())
+        sumC = sumColumns(new_C)
+        self.assertTrue(np.all(np.isclose(sumC, np.array([[1 for _ in range(new_C.shape[0])]]), atol=1e-12)))
 
 
 unittest.main(argv=[''], verbosity=2, exit=False)

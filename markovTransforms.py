@@ -281,7 +281,95 @@ def TSwapEdges(g_orig, inPlace=True):
         print('Degree Sequence: {} to {}'.format(deg_sequence_before, deg_sequence_after))
     
     return(g)
+#################################################################################
+# TSwapEdgeDirected
+#
+# Parameters:
+# - graph g
+# 
+#
+#################################################################################
+def TSwapEdgesDirected(g_orig, inPlace=True, preserveColumnStochastic=True, checkDegreeDistributionIntact=False):
+    ''' Designed for undirected graph - will need to review for directed graph '''
+    
+    if inPlace == False:
+        g=copy.deepcopy(g_orig)
+    else:
+        g=g_orig
+        
+    '''Pick 2 links and swap one of the node of each link'''
+    
+    if checkDegreeDistributionIntact==True:
+        '''Check N and degree sequence before transformation'''
+        N_before = g.number_of_nodes()
+        L_before = g.number_of_edges()
+        indeg_sequence_before = [d for v, d in g.in_degree()]
+        outdeg_sequence_before = [d for v, d in g.out_degree()]
+    
+        # Determine if network edges are weighted
+    weighted=True
+    weights = nx.get_edge_attributes(g, 'weight')
+    if (weights == {}):
+        weighted=False
+    
+    validSwapExist=False
+    N = g.number_of_nodes()
+    i=0
+    
+    while not validSwapExist and i < 1000:
+        edge1 = random.choice(list(g.edges()))
+        found=False
+        while not found:
+            edge2 = random.choice([ e for e in g.edges() if e not in g.edges(edge1[0]) and e not in g.edges(edge1[1]) ])
+            if edge1 != edge2 and len(set([*edge1, *edge2])) == 4: # the edges don't share a node
+                found = True
 
+        b1 = (edge1[0], edge2[1])
+        b2 = (edge2[0], edge1[1])
+        #possible_new_edges = [ [a1,a2] if (g.has_edge(a1) or g.has_edge(a2)) is False ,  [b1,b2] if (g.has_edge(b1) or g.has_edge(b2)) is False]
+        possible_new_edges = [ [i,j] for [i,j] in [[b1,b2]] if (g.has_edge(*i) or g.has_edge(*j)) is False and i != j ]
+
+        if len(possible_new_edges) != 0:
+            validSwapExist=True
+            new_edges=random.choice(possible_new_edges)
+        i+=1
+  
+    if (i==1000):
+        print("Cannot find a valid transformation, your graph may be too dense")
+        return g  #cannot find a valid transformation
+
+    g.add_edge(*new_edges[0])
+    g.add_edge(*new_edges[1])
+    g.remove_edge(*edge1)
+    g.remove_edge(*edge2)
+    
+    if preserveColumnStochastic==True and weighted==True:
+        sumC = sumColumns(nx.to_numpy_array(g))
+        if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
+            # if all columns sums are not equal to 1, then we need to rebalance
+            g = makeColumnStochastic(g, with_random_weights_initialization=False)
+        # check
+        sumC = sumColumns(nx.to_numpy_array(g))
+        if not np.all(np.isclose(sumC, np.array([[1 for _ in range(N)]]), atol=1e-12)):
+            print('Could not make column stochastic C : ')
+    
+    if checkDegreeDistributionIntact==True:
+        '''Check N and degree sequence after transformation, it needs to be the same as before'''
+        N_after = g.number_of_nodes()
+        L_after = g.number_of_edges()
+        indeg_sequence_after = [d for v, d in g.in_degree()]
+        outdeg_sequence_after = [d for v, d in g.out_degree()]
+        
+        if ( N_before != N_after or L_before != L_after \
+            or indeg_sequence_before != indeg_sequence_after \
+              or outdeg_sequence_before != outdeg_sequence_after  ):
+            print('Your transformation is corrupt, it exits Omega, please review your code')
+            print('N: {} to {}'.format(N_before, N_after))
+            print('L: {} to {}'.format(L_before, L_after))
+            print('In Degree Sequence: {} to {}'.format(indeg_sequence_before, indeg_sequence_after))
+            print('Out Degree Sequence: {} to {}'.format(outdeg_sequence_before, outdeg_sequence_after))
+    
+    return(g)
 #################################################################################
 # Function to Apply a MCMC transformation T t times and collect measures
 #

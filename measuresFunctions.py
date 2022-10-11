@@ -248,6 +248,33 @@ def plotDegreeDistribution(g):
     plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
     return fig, ax
 
+def plotInDegreeDistribution(g):
+    deg_sequence =  [d for v, d in g.in_degree()]
+    fig, ax = plt.subplots()
+    plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
+    return fig, ax
+
+def plotOutDegreeDistribution(g):
+    deg_sequence =  [d for v, d in g.out_degree()]
+    fig, ax = plt.subplots()
+    plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
+    return fig, ax
+
+def sumWeightEdges(outEdges, weight='weight'):
+    # outEdge : outEdgesDataView  e.g. OutEdgeDataView([(0, 1, {}), (1, 2, {}), (2, 3, {'weight': 5})])
+    sum=0
+    for e in outEdges:
+        sum+=e[2][weight]
+    return sum
+        
+def plotOutEdgeWeightDistribution(g, bins=10, density=True):
+    weights_sequence =  [sumWeightEdges(g.out_edges([n], data=True)) for n in g.nodes()]
+    # transform float sequence into integer histogram with numpy
+    hist, bin_edges = np.histogram(weights_sequence, bins=bins)
+    fig, ax = plt.subplots()
+    plt.bar(range(len(hist)), hist)
+    return fig, ax
+
 def printSamplesMeasuresMeanAndStd(measures, sample_measure_fn=getMeasuresDirected):
     if (sample_measure_fn.__name__=='getMeasuresDirected'):
         if type(measures['N'])!=list:
