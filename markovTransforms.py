@@ -55,6 +55,9 @@ def TReconnectDestinationOfEdgeToOtherNode(g_orig, inPlace=True):
     rebalance_incoming_edges_for_node(g, edge_to_reconnect[1])
     return(g)
 
+def TReconnectOriginOfEdgeToOtherNodeNoSelfLoops(g_orig, inPlace=False):
+    return TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=inPlace, preventSelfLoops=True)
+
 def TReconnectOriginOfEdgeToOtherNode(g_orig, inPlace=True, preventSelfLoops=False):
     """Transformation for Metropolis Hasting algorithm that keeps out-degree constant, but not in-degree
         MCMC transformation that preserves number of edges and nodes, and incoming degree distribution but not outgoing degree distribution"

@@ -49,7 +49,7 @@ def getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph =
         return g
     else:
         return nx.to_numpy_array(g)
-    
+       
 def getSBM(sizes, ps, seed=None, withSelfLoops=False):   
     return nx.stochastic_block_model(sizes, ps, directed=True, selfloops=withSelfLoops, sparse=True, seed=seed)
 

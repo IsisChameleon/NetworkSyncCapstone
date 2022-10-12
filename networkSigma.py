@@ -43,7 +43,6 @@ def projectedCovarianceMatrixForContinuousDynamicalProcesses(C, tolerance=10 , m
     tolerance : tol = 100 # Multiples of machine epsilon within which we want to consider a value to be zero.
     max_iterations : maximum terms to calculate in the power series to evaluate the projected covariance matrix
     '''
-    
     N = C.shape[0]
     U = getCenteringMatrix(N)
 
@@ -76,7 +75,7 @@ def projectedCovarianceMatrixForContinuousDynamicalProcesses(C, tolerance=10 , m
         mac = np.mean(np.mean(np.abs(projM)))
         print(f'WARNING power series did not converge within the maximum allowed iterations')
         return
-
+    
     return projM
 
 '''
@@ -136,7 +135,7 @@ def discreteSigma2Analytical(g):
 
 def continuousSigma2Analytical(g):
     # Warning: Your network must be synchronizable in order to use this function. I didn't include a test for eigenvalues here because it
-    # would have added compute time, but your largest eigenvalue must be 1.
+    # would have added compute time, but your largest eigenvalue must be 1 for the vector (1,1,1,1,1,1,..)
     # It will throw an exception if the calculation of the projectedCovarianceMatrix fails to converge
     
     C = nx.to_numpy_array(g)
@@ -145,9 +144,8 @@ def continuousSigma2Analytical(g):
 
 def continuousSigma2AnalyticalHT(g):
     # Warning: Your network must be synchronizable in order to use this function. I didn't include a test for eigenvalues here because it
-    # would have added compute time, but your largest eigenvalue must be 1.
+    # would have added compute time, but your largest eigenvalue must be 1 for the vector (1,1,1,1,1,1,..)
     # It will throw an exception if the calculation of the projectedCovarianceMatrix fails to converge
-    
     C = nx.to_numpy_array(g)
     projectedCovarianceMatrix = projectedCovarianceMatrixForContinuousDynamicalProcesses
     return np.trace(projectedCovarianceMatrix(C, tolerance=100))/C.shape[0]

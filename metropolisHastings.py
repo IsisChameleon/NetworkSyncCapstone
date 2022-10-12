@@ -30,7 +30,7 @@ def Acceptance(g, gnext, measure_fn, **parameters):
     Xg = measure_fn(g)
     Xgnext = measure_fn(gnext)
     beta = parameters['beta']
-        
+    
     if (beta * (Xgnext - Xg)) >= 0:
         accept = 1
     else: 
@@ -71,11 +71,12 @@ def MetropolisHasting(g_orig, T, number_of_samples, thinning, max_propositions, 
         accepted_swaps =0
         total_propositions=0
         while accepted_swaps < thinning and total_propositions < max_propositions:
+            
             gnext = T(g, inPlace=False)
             total_propositions+=1
 
             Acc=Acceptance(g, gnext, constraint_measure_fn, **parameters)
-            
+
             if Acc == 1:       
                 # when the next graph is more probable take it!
                 g=gnext
