@@ -422,7 +422,7 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data'):
             data['g'].append(result)
             data['time'].append(0)
             data['file'].append(fn)
-            data['experiment'].append(experiment_name)
+            data['experiment'].append(fn.name.rstrip('.pkl'))
             data['startingNetwork'].append(getStartingNetwork(fn.name))
             data['transformation'].append(getTransformation(fn.name))
             data['comment'].append('startNet')  
@@ -477,7 +477,7 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data'):
                     #data['continuousSigma2Analytical'].append(None)
                 data['time'].append(i)
                 data['file'].append(fn)
-                data['experiment'].append(experiment_name)
+                data['experiment'].append(fn.name.rstrip('.pkl'))
                 data['startingNetwork'].append(getStartingNetwork(fn.name))
                 data['transformation'].append(getTransformation(fn.name))
                 data['comment'].append(comment)
@@ -500,7 +500,7 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data'):
                     #data['continuousSigma2Analytical'].append(None)
                 data['time'].append(i)
                 data['file'].append(fn)
-                data['experiment'].append(experiment_name)
+                data['experiment'].append(fn.name.rstrip('.pkl'))
                 data['startingNetwork'].append(getStartingNetwork(fn.name))
                 data['transformation'].append(getTransformation(fn.name))
                 data['comment'].append(comment)
@@ -545,8 +545,14 @@ def analyzeMetropolisHastingsGraphs(df, measure_fn, plot=True):
     
     measure_name = measure_fn.__name__
     
+    def getMeasureFor(g):
+        if g!= None:
+            return measure_fn(g)
+        else:
+            return nan
+    
     if measure_name not in df.keys():
-        df[measure_name]=df.g.apply(lambda g : measure_fn(g))
+        df[measure_name]=df.g.apply(lambda g : getMeasureFor(g))
     
     M = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).mean().sort_values(by='beta', ascending=True)
     M_err = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).std().sort_values(by='beta', ascending=True)
