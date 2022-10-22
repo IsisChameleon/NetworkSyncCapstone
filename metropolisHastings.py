@@ -323,25 +323,30 @@ def getTransformation(filename):
 
 def getStartingNetwork(filename):
     patternRandom = r"ER-100-(p0.[0-9]*)-"
+    patternRandom2 = r"FixIn-100-ER(0.[0-9]*)"
     patternFixIn = r"FixIn-100-DegIn([2-9])-"
     patternFixIn2 = r"FixIn-100-FixInDegreeSequence([2-9])-"
     patternRegular = r"-Regular([1-9])-"
     
     startingNetwork = 'undetermined'
     if re.search(patternRandom, filename)!= None:
-        p = re.match(patternRandom, filename)[1]
+        p = re.search(patternRandom, filename)[1]
         print('... random prob:', p)
         startingNetwork = f'ErdosRenyi-{p}'
+    if re.search(patternRandom2, filename)!= None:
+        p = re.search(patternRandom2, filename)[1]
+        print('... random prob:', p)
+        startingNetwork = f'ErdosRenyi-p{p}'
     if re.search(patternFixIn, filename)!= None:
-        degIn = re.match(patternFixIn, filename)[1]
+        degIn = re.search(patternFixIn, filename)[1]
         print('... fixed incoming degree:', degIn)
         startingNetwork = f'Fixed Incoming degree-{degIn}'
     if re.search(patternFixIn2, filename)!= None:
-        degIn = re.match(patternFixIn2, filename)[1]
+        degIn = re.search(patternFixIn2, filename)[1]
         print('... fixed incoming degree:', degIn)
         startingNetwork = f'Fixed Incoming degree-{degIn}'
     if re.search(patternRegular, filename)!= None:
-        deg = re.match(patternRegular, filename)[1]
+        deg = re.search(patternRegular, filename)[1]
         print('... regular with degree:', deg)
         startingNetwork = f'Regular-{deg}'
         
@@ -359,7 +364,16 @@ def getDiscreteOrContinuous(filename):
     
     return discreteOrContinuous
 
-def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name='discreteSigma2Analytical'):
+def getFixedWeightsOrNot(g):
+    weights = nx.get_edge_attributes(g, 'weight').values()
+    wm = np.array(list(weights)).mean()
+    wstd = np.array(list(weights)).std()
+    if wstd == 0:
+        return f'Fixed {wm:.04f}'
+    else:
+        return f'Varying {wm:.04f}+-{wstd:.04f}'
+
+def loadSamplesFromPickle(experiment_name, datafolder='./data'):
 
     # name like r_Gcatu_TSE_up_beta_3000.pkl
     baseUri=Path(datafolder)
@@ -376,11 +390,12 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
     patternBurnin = r"_burnin_(-?[0-9]*)\.pkl"
     patternMin = r"-MIN-"
     patternMax = r"-MAX-"
-
+    patternRandomWeights = r"-[r,R]andom[w,W]"
+    patternFixedWeights = r"-[f, F]ixed[w,W]"
 
     data  ={ 'beta': [], 'up': [], 'g': [], 'time':[], 'file':[], \
-        'experiment':[], 'transformation':[], 'startingNetwork':[], 'comment':[], \
-            constraint_name: [], 'minOrMax': [], 'optimizationBaseOn': [], 'discreteOrContinuous': []}
+        'experiment':[], 'transformation':[], 'startingNetwork':[], 'comment':[], 'fixedOrVaryingWeights': [], \
+            'discreteSigma2Analytical': [], 'continuousSigma2Analytical': [], 'minOrMax': [], 'optimizationBasedOn': [], 'discreteOrContinuous': []}
 
     for i, fn in enumerate(pklFiles):
         
@@ -410,16 +425,13 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
             data['experiment'].append(experiment_name)
             data['startingNetwork'].append(getStartingNetwork(fn.name))
             data['transformation'].append(getTransformation(fn.name))
-            data['comment'].append('startNet')
-            sigma=nan
-            if constraint_name == 'discreteSigma2Analytical':
-                sigma = discreteSigma2Analytical(result)
-            if constraint_name == 'continuousSigma2Analytical' or constraint_name == 'continuousSigma2AnalyticalHT':
-                sigma = continuousSigma2Analytical(result)      
-            data[constraint_name].append(sigma)
+            data['comment'].append('startNet')  
+            data['discreteSigma2Analytical'].append(discreteSigma2Analytical(result))
+            data['continuousSigma2Analytical'].append(continuousSigma2Analytical(result))
             data['minOrMax'].append(minOrMax)
             data['optimizationBasedOn'].append(constraint_name)
             data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
+            data['fixedOrVaryingWeights'].append(getFixedWeightsOrNot(result))
             continue
         
         comment=''
@@ -442,22 +454,65 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
 
         #loading pickle file
         result=pickleLoad(str(fn.stem), str(fn.parents[0]), silent=True)
+        
+        constraint_name='undetermined'
+        if 'discreteSigma2Analytical' in result['samples']:
+            constraint_name = 'discreteSigma2Analytical'
+        if 'continuousSigma2Analytical' in result['samples']:
+            constraint_name = 'continuousSigma2Analytical'
 
-        for i, (sample, constraint_measure) in enumerate(zip(result['samples']['g'], result['samples'][constraint_name])):
+        if 'g' in result['samples']:
+            for i, (sample, constraint_measure) in enumerate(zip(result['samples']['g'], result['samples'][constraint_name])):
 
-            data['beta'].append(beta)
-            data['up'].append(up)
-            data['g'].append(sample)
-            data[constraint_name].append(constraint_measure)
-            data['time'].append(i)
-            data['file'].append(fn)
-            data['experiment'].append(experiment_name)
-            data['startingNetwork'].append(getStartingNetwork(fn.name))
-            data['transformation'].append(getTransformation(fn.name))
-            data['comment'].append(comment)
-            data['minOrMax'].append(minOrMax)
-            data['optimizationBasedOn'].append(constraint_name)
-            data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
+                data['beta'].append(beta)
+                data['up'].append(up)
+                data['g'].append(sample)
+                if 'continuousSigma2Analytical' in result['samples']:
+                    data['continuousSigma2Analytical'].append(constraint_measure)
+                    data['discreteSigma2Analytical'].append(discreteSigma2Analytical(sample))
+                    #data['discreteSigma2Analytical'].append(None)
+                if 'discreteSigma2Analytical' in result['samples']:
+                    data['discreteSigma2Analytical'].append(constraint_measure)
+                    data['continuousSigma2Analytical'].append(continuousSigma2Analytical(sample))
+                    #data['continuousSigma2Analytical'].append(None)
+                data['time'].append(i)
+                data['file'].append(fn)
+                data['experiment'].append(experiment_name)
+                data['startingNetwork'].append(getStartingNetwork(fn.name))
+                data['transformation'].append(getTransformation(fn.name))
+                data['comment'].append(comment)
+                data['minOrMax'].append(minOrMax)
+                data['optimizationBasedOn'].append(constraint_name)
+                data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
+                data['fixedOrVaryingWeights'].append(getFixedWeightsOrNot(sample))
+        else:
+            for i, constraint_measure in enumerate(result['samples'][constraint_name]):
+                data['beta'].append(beta)
+                data['up'].append(up)
+                data['g'].append(None)
+                if 'continuousSigma2Analytical' in result['samples']:
+                    data['continuousSigma2Analytical'].append(constraint_measure)
+                    data['discreteSigma2Analytical'].append(discreteSigma2Analytical(sample))
+                    #data['discreteSigma2Analytical'].append(None)
+                if 'discreteSigma2Analytical' in result['samples']:
+                    data['discreteSigma2Analytical'].append(constraint_measure)
+                    data['continuousSigma2Analytical'].append(continuousSigma2Analytical(sample))
+                    #data['continuousSigma2Analytical'].append(None)
+                data['time'].append(i)
+                data['file'].append(fn)
+                data['experiment'].append(experiment_name)
+                data['startingNetwork'].append(getStartingNetwork(fn.name))
+                data['transformation'].append(getTransformation(fn.name))
+                data['comment'].append(comment)
+                data['minOrMax'].append(minOrMax)
+                data['optimizationBasedOn'].append(constraint_name)
+                data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
+                fixedOrNot = 'undetermined'
+                if re.search(patternRandomWeights, fn.name)!= None:
+                    fixedOrNot = 'Varying'
+                if re.search(patternFixedWeights, fn.name)!= None:
+                    fixedOrNot = 'Fixed'  
+                data['fixedOrVaryingWeights'].append(fixedOrNot)
 
     df = pd.DataFrame.from_dict(data)
     df = df.sort_values(by=['beta', 'time'])
