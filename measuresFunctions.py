@@ -251,12 +251,14 @@ def plotDegreeDistribution(g):
 def plotInDegreeDistribution(g):
     deg_sequence =  [d for v, d in g.in_degree()]
     fig, ax = plt.subplots()
+    plt.title('InDegreeDistribution')
     plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
     return fig, ax
 
 def plotOutDegreeDistribution(g):
     deg_sequence =  [d for v, d in g.out_degree()]
     fig, ax = plt.subplots()
+    plt.title('OutDegreeDistribution')
     plt.hist(deg_sequence,density=True,bins=range(np.max(deg_sequence)), histtype='bar')
     return fig, ax
 
@@ -272,6 +274,7 @@ def plotOutEdgeWeightDistribution(g, bins=10, density=True):
     # transform float sequence into integer histogram with numpy
     hist, bin_edges = np.histogram(weights_sequence, bins=bins)
     fig, ax = plt.subplots()
+    plt.title('OutEdgeWeightDistribution')
     plt.bar(range(len(hist)), hist)
     return fig, ax
 

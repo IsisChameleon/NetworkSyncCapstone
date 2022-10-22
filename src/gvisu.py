@@ -5,6 +5,11 @@ import networkx as nx
 # Ignore warnings
 import warnings
 warnings.filterwarnings('ignore')
+import sys
+import networkx as nx
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import single, complete, average, ward
+import numpy as np
 
 # https://stackoverflow.com/questions/22785849/drawing-multiple-edges-between-two-nodes-with-networkxb
 
@@ -237,6 +242,67 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
 def drawGraph(g, experiment_title=None, folder=None, showImages=True, **kwargs):
     fig, ax = plt.subplots(figsize=(16,9))
     drawCurvedEdgesGraph(g, ax)
+    
+def getOrderFromZ(Z, N):
+    rowsZ = Z.shape[0]
+    order = []
+    for r in range(rowsZ):
+        n1 = Z[r][0]
+        n2 = Z[r][1]
+        if (n1 < 100):
+            order.append(n1)
+        if (n2 < 100):
+            order.append(n2)
+            
+    order = np.array(order).astype(np.int64)
+    return order
+
+
+def reorderSquareMatrix(M, order: list):
+    newMat = np.zeros((len(order), len(order)))
+    newi=0
+    newj=0
+    for i in order:
+        for j in order:
+            newMat[newi][newj]=M[i][j]
+            newj+=1
+        newi+=1
+        newj=0
+    return newMat
+
+
+def plotOrderedDistanceMatrix(g, triangle='up', linkage=average, zeroes=1e-12, experiment_title=None):
+    # directed networks we need to consider separately the upper matrix and the lower adjacency matrix (because distance(a,b) = distance(b,a))
+    # triangle = 'up' or 'down' is for that
+    # linkage : single, complete, average, ward 
+    
+    C = nx.to_numpy_array(g)
+    N=C.shape[0]
+    C[C==0]=zeroes
+
+    distC = np.reciprocal(C)
+    
+    if triangle=='down':
+        dd = distC.T
+    else:
+        dd = distC
+
+    # k=1 to not take diagonal
+    triangledd = dd[np.triu_indices(N, k = 1)]
+
+    Z = linkage(triangledd)
+    
+    order = getOrderFromZ(Z, N)
+    CC = reorderSquareMatrix(distC, order)
+
+    fig, ax = plt.subplots(figsize=(9,5))
+    plt.imshow(CC, interpolation='nearest')
+
+    plt.colorbar()
+    title=f'{experiment_title}\nReordered weighted adjacency matrix, triangle {triangle}, linkage {linkage.__name__}'
+    plt.suptitle(f'{title}', size=18)
+    plt.tight_layout()  
+    plt.show() 
 
     
     

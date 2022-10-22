@@ -295,6 +295,69 @@ experiment : experiment name
 comment : to determine if this is a startnet, or a burnin sample
 #############################################################################################
 '''
+from networkSigma import discreteSigma2Analytical, continuousSigma2Analytical
+
+def getTransformation(filename):
+    patternTReconnectDestinationOfEdgeToOtherNode = r"TReconnectDestinationOfEdgeToOtherNode"
+    patternTReconnectOriginOfEdgeToOtherNode = r"TReconnectOriginOfEdgeToOtherNode"
+    patternTDeleteEdgeAddEdge = r"TDeleteEdgeAddEdge"
+    patternTDeleteEdgeAddEdgeWeightedColumnStochastic = r"TDeleteEdgeAddEdgeWeightedColumnStochastic"
+    patternTReconnectOriginOfEdgeToOtherNodeNoSelfLoops = r"TReconnectOriginOfEdgeToOtherNodeNoSelfLoops"
+    patternTSwapEdgesDirected = r"TSwapEdgesDirected"
+    
+    transformation='undetermined'
+    if re.search(patternTReconnectDestinationOfEdgeToOtherNode, filename)!= None:
+        transformation = 'TReconnectDestinationOfEdgeToOtherNode'
+    if re.search(patternTReconnectOriginOfEdgeToOtherNode, filename)!= None:
+        transformation = 'TReconnectOriginOfEdgeToOtherNode'
+    if re.search(patternTDeleteEdgeAddEdge, filename)!= None:
+        transformation = 'TDeleteEdgeAddEdge'
+    if re.search(patternTDeleteEdgeAddEdgeWeightedColumnStochastic, filename)!= None:
+        transformation = 'TDeleteEdgeAddEdgeWeightedColumnStochastic'
+    if re.search(patternTReconnectOriginOfEdgeToOtherNodeNoSelfLoops, filename)!= None:
+        transformation = 'TReconnectOriginOfEdgeToOtherNodeNoSelfLoops'
+    if re.search(patternTSwapEdgesDirected, filename)!= None:
+        transformation = 'TSwapEdgesDirected'
+        
+    return transformation
+
+def getStartingNetwork(filename):
+    patternRandom = r"ER-100-(p0.[0-9]*)-"
+    patternFixIn = r"FixIn-100-DegIn([2-9])-"
+    patternFixIn2 = r"FixIn-100-FixInDegreeSequence([2-9])-"
+    patternRegular = r"-Regular([1-9])-"
+    
+    startingNetwork = 'undetermined'
+    if re.search(patternRandom, filename)!= None:
+        p = re.match(patternRandom, filename)[1]
+        print('... random prob:', p)
+        startingNetwork = f'ErdosRenyi-{p}'
+    if re.search(patternFixIn, filename)!= None:
+        degIn = re.match(patternFixIn, filename)[1]
+        print('... fixed incoming degree:', degIn)
+        startingNetwork = f'Fixed Incoming degree-{degIn}'
+    if re.search(patternFixIn2, filename)!= None:
+        degIn = re.match(patternFixIn2, filename)[1]
+        print('... fixed incoming degree:', degIn)
+        startingNetwork = f'Fixed Incoming degree-{degIn}'
+    if re.search(patternRegular, filename)!= None:
+        deg = re.match(patternRegular, filename)[1]
+        print('... regular with degree:', deg)
+        startingNetwork = f'Regular-{deg}'
+        
+    return startingNetwork
+
+def getDiscreteOrContinuous(filename):
+    
+    patternContinuous=r"[c,C]ontinuous"
+    patternDiscrete=r"[d,D]iscrete"
+    discreteOrContinuous = 'undetermined'
+    if re.search(patternContinuous, filename)!= None:
+        discreteOrContinuous = 'continuous'
+    if re.search(patternDiscrete, filename)!= None:
+        discreteOrContinuous = 'discrete'
+    
+    return discreteOrContinuous
 
 def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name='discreteSigma2Analytical'):
 
@@ -311,32 +374,62 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
     patternUp = r"_up_"
     patternStartNet = r"StartNet"
     patternBurnin = r"_burnin_(-?[0-9]*)\.pkl"
+    patternMin = r"-MIN-"
+    patternMax = r"-MAX-"
 
-    data  ={ 'beta': [], 'up': [], 'g': [], 'time':[], 'file':[], 'experiment':[], 'comment':[], constraint_name: []}
+
+    data  ={ 'beta': [], 'up': [], 'g': [], 'time':[], 'file':[], \
+        'experiment':[], 'transformation':[], 'startingNetwork':[], 'comment':[], \
+            constraint_name: [], 'minOrMax': [], 'optimizationBaseOn': [], 'discreteOrContinuous': []}
 
     for i, fn in enumerate(pklFiles):
         
         print(f'Processing file {i}, {fn}')
         
+        minOrMax = 'MIN-MAX'
+        if re.search(patternMin, fn.name)!= None:
+            print('... MIN file')
+            minOrMax = 'MIN'
+        else:
+            if re.search(patternMax, fn.name)!= None:
+                print('... MAX file')
+                minOrMax = 'MAX'
+        
         # Saving initial network 
         if re.search(patternStartNet, fn.name)!= None:
+            print('... StartNet file')
             result=pickleLoad(str(fn.stem), str(fn.parents[0]), silent=False)
             data['beta'].append(nan)
-            data['up'].append(True)
+            up = True
+            if minOrMax == 'MIN':
+                up=False
+            data['up'].append(up)
             data['g'].append(result)
-            data['time'].append(nan)
+            data['time'].append(0)
             data['file'].append(fn)
             data['experiment'].append(experiment_name)
+            data['startingNetwork'].append(getStartingNetwork(fn.name))
+            data['transformation'].append(getTransformation(fn.name))
             data['comment'].append('startNet')
-            data[constraint_name].append(nan)
+            sigma=nan
+            if constraint_name == 'discreteSigma2Analytical':
+                sigma = discreteSigma2Analytical(result)
+            if constraint_name == 'continuousSigma2Analytical' or constraint_name == 'continuousSigma2AnalyticalHT':
+                sigma = continuousSigma2Analytical(result)      
+            data[constraint_name].append(sigma)
+            data['minOrMax'].append(minOrMax)
+            data['optimizationBasedOn'].append(constraint_name)
+            data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
             continue
         
         comment=''
         if re.search(patternBurnin, fn.name)!=None:
         # Reading burning results
-            print('Reading burnin file')
-            beta = int(re.search(patternBurnin, fn.name).group(1))
-            up=True
+            print('... burnin file')
+            beta = int(re.search(patternBurnin, fn.name).group(1)) 
+            up = True
+            if minOrMax == 'MIN':
+                up=False
             comment='burnin'
         else:
         # Reading standard result
@@ -359,7 +452,12 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data', constraint_name=
             data['time'].append(i)
             data['file'].append(fn)
             data['experiment'].append(experiment_name)
+            data['startingNetwork'].append(getStartingNetwork(fn.name))
+            data['transformation'].append(getTransformation(fn.name))
             data['comment'].append(comment)
+            data['minOrMax'].append(minOrMax)
+            data['optimizationBasedOn'].append(constraint_name)
+            data['discreteOrContinuous'].append(getDiscreteOrContinuous(fn.name))
 
     df = pd.DataFrame.from_dict(data)
     df = df.sort_values(by=['beta', 'time'])
