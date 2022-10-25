@@ -23,7 +23,7 @@ def makeColumnStochastic(g, with_random_weights_initialization=True):
     return nx.from_numpy_array(np.array(newC), create_using=create_using)
     
 
-def getDirectedErdosRenyi(n,p,max_trials=50):
+def getDirectedErdosRenyi(n,p,max_trials=3000):
     doesNotHaveZeroSumColumn=False
     number_of_trials = 0
     while (doesNotHaveZeroSumColumn==False and number_of_trials <= max_trials):
@@ -101,3 +101,13 @@ def getDirectedColumnStochasticErdosRenyi(n, p, return_graph = True, max_trials=
         return gst
     else:
         return nx.to_numpy_array(gst)
+    
+def getPowerLawColumnStochastic(n, exponent=2, return_graph = True):
+    
+    din = nx.utils.powerlaw_sequence(n, exponent)
+    total_din = sum(din)
+    print('Number of edges of powerlaw:', total_din)
+    dout = randomDegreeSequence(n, total_din)
+
+    g = getDirectedConfigurationModel(din, dout, withSelfLoops=False, return_graph = True)
+    g = makeColumnStochastic(g, with_random_weights_initialization=False)  #all weights the same
