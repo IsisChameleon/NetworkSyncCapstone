@@ -236,7 +236,7 @@ def drawMatrix(g, experiment_title=None, folder=None, showImages=True, **kwargs)
         plt.show()
     
     if (folder !=None):
-        plt.imsave(f'{folder}/{experiment_title}.jpg', C, cmap=plt.cm.gnuplot2,
+        plt.imsave(f'{folder}/drawMatrix_{experiment_title}.jpg', C, cmap=plt.cm.gnuplot2,
                 vmin=0)
         
 def drawGraph(g, experiment_title=None, folder=None, showImages=True, **kwargs):
@@ -271,7 +271,7 @@ def reorderSquareMatrix(M, order: list):
     return newMat
 
 
-def plotOrderedDistanceMatrix(g, triangle='up', linkage=average, zeroes=1e-12, experiment_title=None):
+def plotOrderedDistanceMatrix(g, experiment_title, folder, triangle='up', linkage=average, zeroes=1e-12):
     # directed networks we need to consider separately the upper matrix and the lower adjacency matrix (because distance(a,b) = distance(b,a))
     # triangle = 'up' or 'down' is for that
     # linkage : single, complete, average, ward 
@@ -303,6 +303,10 @@ def plotOrderedDistanceMatrix(g, triangle='up', linkage=average, zeroes=1e-12, e
     plt.suptitle(f'{title}', size=18)
     plt.tight_layout()  
     plt.show() 
+    
+    if (folder !=None):
+        plt.imsave(f'{folder}/distanceMatrix_{experiment_title}.jpg', C, cmap=plt.cm.gnuplot2,
+                vmin=0)
 
     
     
