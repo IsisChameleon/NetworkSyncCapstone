@@ -16,5 +16,6 @@ data/**
 *.pkl
 blobby
 images/**
+images2/**
 graphs/**
 test/**

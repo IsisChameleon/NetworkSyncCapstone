@@ -521,7 +521,7 @@ def loadSamplesFromPickle(experiment_name, datafolder='./data'):
 
 applyMeasureToGraph = lambda df, measure_fn : df.g.apply(lambda g : measure_fn(g))
 
-def analyzeMetropolisHastingsGraphs(df, measure_fn, plot=True):
+def analyzeMetropolisHastingsGraphs(df, measure_fn, plot=True, ascending=True):
     '''
     #############################################################################################
     LOAD SAMPLE FROM PICKLE FILES
@@ -554,8 +554,8 @@ def analyzeMetropolisHastingsGraphs(df, measure_fn, plot=True):
     if measure_name not in df.keys():
         df[measure_name]=df.g.apply(lambda g : getMeasureFor(g))
     
-    M = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).mean().sort_values(by='beta', ascending=True)
-    M_err = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).std().sort_values(by='beta', ascending=True)
+    M = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).mean().sort_values(by='beta', ascending=ascending)
+    M_err = df[[measure_name, 'beta']].dropna(axis=0).groupby(['beta'], as_index=False).std().sort_values(by='beta', ascending=ascending)
     
     # M and M_err contains the mean and standard deviation for that measure_name for each beta
        
