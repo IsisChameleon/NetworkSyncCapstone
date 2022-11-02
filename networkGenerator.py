@@ -56,11 +56,13 @@ def getSBM(sizes, ps, seed=None, withSelfLoops=False):
 fixedDegreeSequence = lambda n, din :  [din for _ in range(n)]
 
 def randomDegreeSequence(n, tot):
+    #print('randomDegreeSequence: n, tot:', n, tot)
     d = np.random.uniform(low=0,high=1,size=(n))
     d = (d * tot)/ d.sum(axis=0, keepdims=True)
 
     d = np.round(d).astype(int)
     diff = tot - d.sum(axis=0)
+    #print('random seq diff: ', diff, ', random choice in:', len([i for i, deg in enumerate(d) if deg + diff > 0]), [i for i, deg in enumerate(d)])
     if diff > 0:
         d[0]+=diff
     if diff < 0:

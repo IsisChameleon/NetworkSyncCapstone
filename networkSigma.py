@@ -148,7 +148,7 @@ def continuousSigma2AnalyticalHT(g):
     # It will throw an exception if the calculation of the projectedCovarianceMatrix fails to converge
     C = nx.to_numpy_array(g)
     projectedCovarianceMatrix = projectedCovarianceMatrixForContinuousDynamicalProcesses
-    return np.trace(projectedCovarianceMatrix(C, tolerance=100))/C.shape[0]
+    return np.trace(projectedCovarianceMatrix(C, tolerance=1e+12))/C.shape[0]
 
     
 import copy

@@ -3,6 +3,13 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import math
 
+from networkSigma import continuousSigma2Analytical
+
+from scipy.sparse.linalg import eigsh 
+import networkx.algorithms.community as nx_comm
+from operator import itemgetter
+import networkx.algorithms.community as nx_comm
+
 ###########################################################################################################################################
 # https://networkx.org/documentation/networkx-1.9.1/_modules/networkx/algorithms/components/connected.html#connected_component_subgraphs
 ###########################################################################################################################################
@@ -442,4 +449,180 @@ def plotRelaxationTime(axs, measures, measure_names, relaxation_time, x_range, s
     if show is True:
         plt.show()
     return axs
+
+#---------------------------------------------------------
+# Measure with one argument for df
+#-------------------------------------------------------------
+'''
+sigma_z_over_z,
+average_degree,
+weakly_connected_components,
+strongly_connected_components,
+max_eig,
+max_eigv,
+largestLaplacianEigenvalue,
+modularityGirvanNewmanLightestWeight,
+weightedDegreeAssortativity,
+numberOfCommunitiesGirvanNewmanLightestWeight,
+
+
+'''
+def sigma_z_over_z(g):
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+    
+    sum_degree_nodes=np.sum([g.degree[i] for i in g.nodes])
+    average_degree = sum_degree_nodes/ N
+    
+    Ex2=(1/N)*(np.sum([g.degree[i]**2 for i in g.nodes]))
+    Ex=average_degree
+    sigma_z=np.sqrt(Ex2  - (Ex)**2)
+    sigma_z_over_z= sigma_z/average_degree
+    
+    return sigma_z_over_z
+
+def average_degree(g):
+    N=g.number_of_nodes()
+    L=g.number_of_edges()
+    
+    sum_degree_nodes=np.sum([g.degree[i] for i in g.nodes])
+    average_degree = sum_degree_nodes/ N
+    
+    return average_degree
+
+def weakly_connected_components(g):
+    components = nx.weakly_connected_components(g)
+    return len(list(components))
+
+def strongly_connected_components(g):
+    components = nx.strongly_connected_components(g)
+    return len(list(components))
+
+def max_eig(g):
+    C = nx.to_numpy_array(g)
+    e, v = np.linalg.eig(C)
+    biggest_eigenvalue = np.max(e)
+    if biggest_eigenvalue.imag != None:
+        biggest_eigenvalue = np.max(e).real
+    return biggest_eigenvalue
+
+def max_eigv(g):
+    C = nx.to_numpy_array(g)
+    e, v = np.linalg.eig(C)
+    biggest_eigenvalue_index = np.argmax(e)
+    related_eigenvector = v[:,biggest_eigenvalue_index]
+    return related_eigenvector
+
+def heaviest(G):
+    u, v, w = max(G.edges(data="weight"), key=itemgetter(2))
+    return (u, v)
+
+def lightest(G):
+    u, v, w = min(G.edges(data="weight"), key=itemgetter(2))
+    return (u, v)
+
+# Largest eigenvalues of the Laplacian
+def largestLaplacianEigenvalue(g):
+    L = nx.directed_laplacian_matrix(g, nodelist=None,  weight='weight', walk_type=None, alpha=0.95)
+    eigvals = eigsh(L, k=1, which='LM', sigma=1., return_eigenvectors=False)
+    return eigvals[0]
+largestLaplacianEigenvalue.__name__
+
+def weightedDegreeAssortativity(g):
+    return nx.degree_assortativity_coefficient(g, x='out', y='in', weight='weight', nodes=None)
+
+def degreeAssortativity(g):
+    return nx.degree_assortativity_coefficient(g, x='out', y='in', weight=None, nodes=None)
+
+def averageWeightedNodeBetweennessCentrality(g):
+    bs = nx.betweenness_centrality(g, normalized=True, weight='weight')
+    N = g.number_of_nodes()
+    average_b = np.sum(np.array([v for v in bs.values()]))/N
+    return average_b
+
+def percentageNullWeightedNodeBetweennessCentrality(g):
+    bs = nx.betweenness_centrality(g, normalized=True, weight='weight')
+    N = g.number_of_nodes()
+    pct_b = np.sum(np.array([1 for v in bs.values() if v == 0]))/N
+    return pct_b
+
+def modularityGirvanNewmanHighestBetweeness(g):
+    # https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.quality.modularity.html
+    community_splits = nx_comm.girvan_newman(g)
+    
+    max_modularity = 0
+    best_split = None
+    number_of_communities = 0
+    
+    for k, split in enumerate(community_splits):
+        split_modularity = nx_comm.modularity(g, [*split])
+        if split_modularity > max_modularity:
+            max_modularity = split_modularity
+            best_split = split
+            number_of_communities = len(split)
+    
+    #print("Best split:", best_split)
+    #print("Number of communities:", number_of_communities)
+    #print("Max modularity:", max_modularity)
+    return max_modularity
+
+def modularityGirvanNewmanLightestWeight(g):
+    # https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.quality.modularity.html
+    community_splits = nx_comm.girvan_newman(g, most_valuable_edge=lightest)
+    
+    max_modularity = 0
+    best_split = None
+    number_of_communities = 0
+    
+    for k, split in enumerate(community_splits):
+        split_modularity = nx_comm.modularity(g, [*split])
+        if split_modularity > max_modularity:
+            max_modularity = split_modularity
+            best_split = split
+            number_of_communities = len(split)
+    
+    #print("Best split:", best_split)
+    #print("Number of communities:", number_of_communities)
+    #print("Max modularity:", max_modularity)
+    return max_modularity
+
+def numberOfCommunitiesGirvanNewmanLightestWeight(g):
+    # https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.quality.modularity.html
+    community_splits = nx_comm.girvan_newman(g, most_valuable_edge=lightest)
+    
+    max_modularity = 0
+    best_split = None
+    number_of_communities = 0
+    
+    for k, split in enumerate(community_splits):
+        split_modularity = nx_comm.modularity(g, [*split])
+        if split_modularity > max_modularity:
+            max_modularity = split_modularity
+            best_split = split
+            number_of_communities = len(split)
+    
+    #print("Best split:", best_split)
+    #print("Number of communities:", number_of_communities)
+    #print("Max modularity:", max_modularity)
+    return number_of_communities
+
+def numberOfCommunitiesGirvanNewmanHighestBetweeness(g):
+    # https://networkx.org/documentation/stable/reference/algorithms/generated/networkx.algorithms.community.quality.modularity.html
+    community_splits = nx_comm.girvan_newman(g)
+    
+    max_modularity = 0
+    best_split = None
+    number_of_communities = 0
+    
+    for k, split in enumerate(community_splits):
+        split_modularity = nx_comm.modularity(g, [*split])
+        if split_modularity > max_modularity:
+            max_modularity = split_modularity
+            best_split = split
+            number_of_communities = len(split)
+    
+    #print("Best split:", best_split)
+    #print("Number of communities:", number_of_communities)
+    #print("Max modularity:", max_modularity)
+    return number_of_communities
         
