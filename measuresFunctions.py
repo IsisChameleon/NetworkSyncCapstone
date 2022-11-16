@@ -625,4 +625,22 @@ def numberOfCommunitiesGirvanNewmanHighestBetweeness(g):
     #print("Number of communities:", number_of_communities)
     #print("Max modularity:", max_modularity)
     return number_of_communities
+
+def averageNodeBetweennessCentrality(g):
+    bs = nx.betweenness_centrality(g, normalized=True, weight=None)
+    N = g.number_of_nodes()
+    average_b = np.sum(np.array([v for v in bs.values()]))/N
+    return average_b
+
+def weighted_average_shortest_path_length(g):
+    l = nx.average_shortest_path_length(g, weight='weight')
+    return l
+
+def density(g):
+    L = g.number_of_edges()
+    N = g.number_of_nodes()
+    max_edges = (N*(N-1))/2
+    graph_density = L / max_edges
+    return graph_density
+
         
